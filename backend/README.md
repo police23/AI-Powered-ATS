@@ -9,9 +9,9 @@ This is the Spring Boot backend for the AI-Powered ATS project.
 
 ## Running Locally
 
-1. Set up your environment variables by copying `.env.example` to `.env` in the root of the project.
+1. Set up your environment variables by copying `.env.example` to `.env`. **From the repository root**, run:
    ```bash
-   cp ../.env.example ../.env
+   cp .env.example .env
    ```
 2. Start the required infrastructure (Postgres, Redis) using Docker Compose from the root directory:
    ```bash

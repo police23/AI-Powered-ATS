@@ -24,10 +24,11 @@ FROM eclipse-temurin:21-jre-jammy
 WORKDIR /app
 
 # Install curl for healthcheck
-RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
 
 # Copy the built jar file from the previous stage
-COPY --from=build /app/target/*.jar app.jar
+ARG JAR_FILE=target/*.jar
+COPY --from=build /app/${JAR_FILE} app.jar
 
 # Expose the application port
 EXPOSE 8080

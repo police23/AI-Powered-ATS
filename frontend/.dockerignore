@@ -4,3 +4,6 @@ dist/
 .idea
 .vscode
 coverage/
+.env
+.env.local
+.env.*
