@@ -1,0 +1,9 @@
+services:
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: ats-frontend
+    ports:
+      - "3000:80"
+    restart: unless-stopped

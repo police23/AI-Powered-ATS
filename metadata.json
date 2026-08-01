@@ -1,0 +1,8 @@
+{
+  "name": "AI-Powered ATS",
+  "description": "Hệ thống quản lý tuyển dụng thông minh tích hợp AI, tối ưu hóa quy trình lọc CV và viết JD.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
