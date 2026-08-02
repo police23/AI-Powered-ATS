@@ -5,7 +5,13 @@ services:
       dockerfile: Dockerfile
     container_name: frontend
     ports:
-      - "3000:80"
+      - "3000:3000"
+    environment:
+      - VITE_API_URL=http://backend:8080
+      - CHOKIDAR_USEPOLLING=true
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
     restart: unless-stopped
     depends_on:
       - backend
@@ -24,6 +30,11 @@ services:
       - DB_NAME=${DB_NAME:-ats_db}
       - DB_USER=${DB_USER}
       - DB_PASSWORD=${DB_PASSWORD}
+      - SPRING_DEVTOOLS_RESTART_ENABLED=true
+      - SPRING_DEVTOOLS_LIVERELOAD_ENABLED=true
+    volumes:
+      - ./backend:/app
+      - maven_cache:/root/.m2
     depends_on:
       - postgres
       - redis
@@ -63,3 +74,4 @@ services:
 volumes:
   postgres_data:
   redis_data:
+  maven_cache:
