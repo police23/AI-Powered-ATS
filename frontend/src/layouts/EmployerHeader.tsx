@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Bell, Settings, LogOut, Check, UserPlus, CalendarClock, FileText } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
 
 interface EmployerHeaderProps {
   title: React.ReactNode;
@@ -14,12 +15,23 @@ const MOCK_NOTIFICATIONS = [
 ];
 
 export default function EmployerHeader({ title, children, onNavigate }: EmployerHeaderProps) {
+  const { user, logout } = useAuth();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
   const [notifications, setNotifications] = useState(MOCK_NOTIFICATIONS);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const notificationsRef = useRef<HTMLDivElement>(null);
+
+  const handleConfirmLogout = async () => {
+    setIsLogoutModalOpen(false);
+    await logout();
+    if (onNavigate) {
+      onNavigate('login');
+    } else {
+      window.location.reload();
+    }
+  };
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -133,19 +145,19 @@ export default function EmployerHeader({ title, children, onNavigate }: Employer
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
           >
             <div className="text-right hidden sm:block">
-              <p className="text-sm font-semibold text-slate-800 group-hover:text-indigo-600 transition-colors">Trần Thị B</p>
-              <p className="text-xs text-slate-500">TechCorp HR</p>
+              <p className="text-sm font-semibold text-slate-800 group-hover:text-indigo-600 transition-colors">{user?.email?.split('@')[0] || 'Tuyển dụng'}</p>
+              <p className="text-xs text-slate-500">{user?.role === 'HR_MANAGER' ? 'Quản trị viên Tuyển dụng' : (user?.email || 'HR Recruiter')}</p>
             </div>
             <div className="h-9 w-9 rounded-md bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold border border-indigo-200">
-              T
+              {user?.email?.charAt(0).toUpperCase() || 'H'}
             </div>
           </div>
           
           {isDropdownOpen && (
             <div className="absolute right-0 mt-3 w-56 bg-white rounded-xl shadow-lg border border-slate-100 py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
               <div className="px-4 py-2 border-b border-slate-100 sm:hidden">
-                <p className="text-sm font-semibold text-slate-800">Trần Thị B</p>
-                <p className="text-xs text-slate-500">TechCorp HR</p>
+                <p className="text-sm font-semibold text-slate-800">{user?.email?.split('@')[0] || 'Tuyển dụng'}</p>
+                <p className="text-xs text-slate-500">{user?.email || 'HR Recruiter'}</p>
               </div>
               <button 
                 className="w-full flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-indigo-600 transition-colors cursor-pointer"
@@ -185,10 +197,7 @@ export default function EmployerHeader({ title, children, onNavigate }: Employer
                 Hủy
               </button>
               <button 
-                onClick={() => {
-                  setIsLogoutModalOpen(false);
-                  window.location.reload();
-                }}
+                onClick={handleConfirmLogout}
                 className="rounded-lg bg-rose-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-rose-700 cursor-pointer"
               >
                 Đăng xuất
