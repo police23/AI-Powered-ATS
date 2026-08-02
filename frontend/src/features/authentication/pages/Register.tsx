@@ -1,9 +1,15 @@
 import React, { useState } from 'react';
-import { Briefcase, User, Zap } from 'lucide-react';
+import { Briefcase, User, AlertCircle, Loader2 } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
+import { ApiError } from '@/services/httpClient';
 
 export default function Register({ onBack, onLoginClick, onRegisterSuccess }: { onBack: () => void; onLoginClick: () => void; onRegisterSuccess?: (role: string) => void }) {
   const role = 'candidate';
+  const { register, login } = useAuth();
   const [agreed, setAgreed] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [serverError, setServerError] = useState<string | null>(null);
+
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -22,6 +28,7 @@ export default function Register({ onBack, onLoginClick, onRegisterSuccess }: { 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+    if (serverError) setServerError(null);
     if (errors[name]) {
       setErrors((prev) => ({ ...prev, [name]: '' }));
     }
@@ -50,9 +57,9 @@ export default function Register({ onBack, onLoginClick, onRegisterSuccess }: { 
         setErrors((prev) => ({ ...prev, [name]: 'Email không hợp lệ' }));
       }
     } else if (name === 'password' && value.trim()) {
-      const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
+      const passwordRegex = /^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
       if (!passwordRegex.test(value)) {
-        setErrors((prev) => ({ ...prev, [name]: 'Mật khẩu phải từ 8 kí tự, gồm chữ hoa, chữ thường và số' }));
+        setErrors((prev) => ({ ...prev, [name]: 'Mật khẩu phải từ 8 ký tự, gồm chữ hoa, chữ số và ký tự đặc biệt (@$!%*?&)' }));
       }
     } else if (name === 'confirmPassword' && value.trim()) {
       if (value !== formData.password) {
@@ -61,8 +68,10 @@ export default function Register({ onBack, onLoginClick, onRegisterSuccess }: { 
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setServerError(null);
+
     // Validate all fields
     const newErrors: Record<string, string> = {};
     const requiredFields = ['name', 'email', 'password', 'confirmPassword', 'dob', 'phone', 'gender', 'city', 'occupation', 'experience'];
@@ -89,9 +98,9 @@ export default function Register({ onBack, onLoginClick, onRegisterSuccess }: { 
           newErrors.email = 'Email không hợp lệ';
         }
       } else if (field === 'password') {
-        const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
+        const passwordRegex = /^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
         if (!passwordRegex.test(formData.password)) {
-          newErrors.password = 'Mật khẩu phải từ 8 kí tự, gồm chữ hoa, chữ thường và số';
+          newErrors.password = 'Mật khẩu phải từ 8 ký tự, gồm chữ hoa, chữ số và ký tự đặc biệt (@$!%*?&)';
         }
       } else if (field === 'confirmPassword') {
         if (formData.confirmPassword !== formData.password) {
@@ -104,9 +113,33 @@ export default function Register({ onBack, onLoginClick, onRegisterSuccess }: { 
       setErrors(newErrors);
       return;
     }
-    // submit success
-    if (onRegisterSuccess) {
-      onRegisterSuccess(role);
+
+    setIsSubmitting(true);
+    try {
+      // 1. Call Backend Register API
+      await register({
+        email: formData.email.trim(),
+        password: formData.password,
+        role: 'CANDIDATE',
+      });
+
+      // 2. Automatically log in after registration
+      await login({
+        email: formData.email.trim(),
+        password: formData.password,
+      });
+
+      if (onRegisterSuccess) {
+        onRegisterSuccess(role);
+      }
+    } catch (err: any) {
+      if (err instanceof ApiError) {
+        setServerError(err.message);
+      } else {
+        setServerError('Không thể hoàn tất đăng ký. Vui lòng thử lại sau.');
+      }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -157,20 +190,13 @@ export default function Register({ onBack, onLoginClick, onRegisterSuccess }: { 
             Tham gia cùng hàng ngàn ứng viên tìm kiếm cơ hội việc làm mơ ước
           </p>
 
-          {/* Quick Demo Alert */}
-          <div className="mt-4 p-3 rounded-lg bg-amber-50 border border-amber-200 text-amber-900 flex items-center justify-between text-xs gap-2">
-            <div className="flex items-center gap-2">
-              <Zap size={15} className="text-amber-600 fill-amber-500 shrink-0" />
-              <span>Đang Demo? Dùng ngay tài khoản có sẵn không cần đăng ký.</span>
+          {/* Server Error Alert Banner */}
+          {serverError && (
+            <div className="mt-4 flex items-start gap-2.5 rounded-lg bg-rose-50 border border-rose-200 p-3 text-sm text-rose-700 animate-in fade-in duration-200">
+              <AlertCircle size={18} className="text-rose-500 shrink-0 mt-0.5" />
+              <div className="flex-1">{serverError}</div>
             </div>
-            <button
-              type="button"
-              onClick={onLoginClick}
-              className="px-2.5 py-1 bg-amber-600 hover:bg-amber-700 text-white font-semibold rounded shrink-0 transition-colors cursor-pointer"
-            >
-              Đăng nhập ngay
-            </button>
-          </div>
+          )}
 
           <div className="mt-8">
             <form className="space-y-5" onSubmit={handleSubmit} noValidate>
@@ -456,10 +482,17 @@ export default function Register({ onBack, onLoginClick, onRegisterSuccess }: { 
               <div>
                 <button
                   type="submit"
-                  disabled={!agreed}
-                  className={`flex w-full justify-center rounded-lg px-4 py-2.5 text-sm font-medium text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors ${agreed ? 'bg-indigo-600 hover:bg-indigo-700 cursor-pointer' : 'bg-indigo-300 cursor-not-allowed'}`}
+                  disabled={!agreed || isSubmitting}
+                  className={`flex w-full items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors ${agreed && !isSubmitting ? 'bg-indigo-600 hover:bg-indigo-700 cursor-pointer' : 'bg-indigo-300 cursor-not-allowed'}`}
                 >
-                  Đăng ký ngay
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 size={18} className="animate-spin" />
+                      <span>Đang tạo tài khoản...</span>
+                    </>
+                  ) : (
+                    'Đăng ký ngay'
+                  )}
                 </button>
               </div>
             </form>

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { AdminDashboard } from '../features/admin-dashboard';
 import { AdminUsers } from '../features/admin-users';
 import { AdminCompanies } from '../features/admin-companies';
@@ -15,9 +15,55 @@ import { CandidateJobSearch, JobBoard, PublicJobSearch } from '../features/job-s
 import { EmployerJobs, PostJob } from '../features/job-management';
 import { JobDetail, CandidateJobDetail } from '../features/job-details';
 import { Settings } from '../features/user-settings';
+import { useAuth } from '../hooks/useAuth';
+
+export type ViewType = 
+  | 'job-board' 
+  | 'public-job-search' 
+  | 'job-detail' 
+  | 'candidate-job-detail' 
+  | 'login' 
+  | 'register' 
+  | 'accept-invite' 
+  | 'profile-setup' 
+  | 'candidate-dashboard' 
+  | 'candidate-job-search' 
+  | 'employer-dashboard' 
+  | 'post-job' 
+  | 'applicant-tracking' 
+  | 'applied-jobs' 
+  | 'saved-jobs' 
+  | 'employer-jobs' 
+  | 'interview-calendar' 
+  | 'company-profile' 
+  | 'company-users' 
+  | 'candidate-settings' 
+  | 'employer-settings' 
+  | 'email-templates' 
+  | 'admin-dashboard' 
+  | 'admin-users' 
+  | 'admin-companies' 
+  | 'admin-settings' 
+  | 'public-company-profile' 
+  | 'candidate-company-profile';
 
 export default function AppRoutes() {
-  const [currentView, setCurrentView] = useState<'job-board' | 'public-job-search' | 'job-detail' | 'candidate-job-detail' | 'login' | 'register' | 'accept-invite' | 'profile-setup' | 'candidate-dashboard' | 'candidate-job-search' | 'employer-dashboard' | 'post-job' | 'applicant-tracking' | 'applied-jobs' | 'saved-jobs' | 'employer-jobs' | 'interview-calendar' | 'company-profile' | 'company-users' | 'candidate-settings' | 'employer-settings' | 'email-templates' | 'admin-dashboard' | 'admin-users' | 'admin-companies' | 'admin-settings' | 'public-company-profile' | 'candidate-company-profile'>('job-board');
+  const { user } = useAuth();
+  const [currentView, setCurrentView] = useState<ViewType>(() => {
+    // If user is already authenticated on initial load, take them to their dashboard
+    const savedUser = localStorage.getItem('ats_user_profile');
+    if (savedUser) {
+      try {
+        const parsed = JSON.parse(savedUser);
+        if (parsed.role === 'ADMIN') return 'admin-dashboard';
+        if (parsed.role === 'HR' || parsed.role === 'HR_MANAGER') return 'employer-dashboard';
+        if (parsed.role === 'CANDIDATE') return 'candidate-dashboard';
+      } catch {
+        // Fallback
+      }
+    }
+    return 'job-board';
+  });
 
   const handleAdminNavigation = (item: string) => {
     switch (item) {
@@ -32,6 +78,9 @@ export default function AppRoutes() {
         break;
       case 'settings':
         setCurrentView('admin-settings');
+        break;
+      case 'login':
+        setCurrentView('login');
         break;
     }
   };
@@ -52,6 +101,9 @@ export default function AppRoutes() {
         break;
       case 'saved':
         setCurrentView('saved-jobs');
+        break;
+      case 'login':
+        setCurrentView('login');
         break;
     }
   };
@@ -84,6 +136,9 @@ export default function AppRoutes() {
         break;
       case 'email-templates':
         setCurrentView('email-templates');
+        break;
+      case 'login':
+        setCurrentView('login');
         break;
     }
   };

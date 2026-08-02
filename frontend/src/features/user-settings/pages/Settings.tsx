@@ -5,12 +5,15 @@ import EmployerSidebar from '../../../layouts/EmployerSidebar';
 import EmployerHeader from '../../../layouts/EmployerHeader';
 import CandidateHeader from '../../../layouts/CandidateHeader';
 
+import { useAuth } from '@/hooks/useAuth';
+
 interface SettingsProps {
   role: 'candidate' | 'employer';
   onNavigate?: (item: string) => void;
 }
 
 export default function Settings({ role, onNavigate }: SettingsProps) {
+  const { user, logout } = useAuth();
   const [activeTab, setActiveTab] = useState<'profile' | 'security' | 'notifications'>('profile');
   const [showSavedToast, setShowSavedToast] = useState(false);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
@@ -57,8 +60,13 @@ export default function Settings({ role, onNavigate }: SettingsProps) {
     setTimeout(() => setShowSavedToast(false), 3000);
   };
 
-  const handleLogout = () => {
-    window.location.reload();
+  const handleLogout = async () => {
+    await logout();
+    if (onNavigate) {
+      onNavigate('login');
+    } else {
+      window.location.reload();
+    }
   };
 
   return (

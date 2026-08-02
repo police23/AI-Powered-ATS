@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Bell, LogOut, ShieldAlert } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
 
 interface AdminHeaderProps {
   title: React.ReactNode;
@@ -8,9 +9,20 @@ interface AdminHeaderProps {
 }
 
 export default function AdminHeader({ title, children, onNavigate }: AdminHeaderProps) {
+  const { user, logout } = useAuth();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const handleConfirmLogout = async () => {
+    setIsLogoutModalOpen(false);
+    await logout();
+    if (onNavigate) {
+      onNavigate('login');
+    } else {
+      window.location.reload();
+    }
+  };
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -46,7 +58,7 @@ export default function AdminHeader({ title, children, onNavigate }: AdminHeader
               <ShieldAlert size={16} />
             </div>
             <div className="text-left hidden sm:block">
-              <p className="text-sm font-bold text-slate-700 leading-none mb-1">Super Admin</p>
+              <p className="text-sm font-bold text-slate-700 leading-none mb-1">{user?.email || 'Super Admin'}</p>
               <p className="text-xs text-slate-500 leading-none">System Administrator</p>
             </div>
           </button>
@@ -81,10 +93,7 @@ export default function AdminHeader({ title, children, onNavigate }: AdminHeader
                 Hủy
               </button>
               <button 
-                onClick={() => {
-                  setIsLogoutModalOpen(false);
-                  window.location.reload();
-                }}
+                onClick={handleConfirmLogout}
                 className="rounded-lg bg-rose-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-rose-700 cursor-pointer"
               >
                 Đăng xuất
