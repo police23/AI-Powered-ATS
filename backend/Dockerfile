@@ -1,37 +1,23 @@
-# Stage 1: Build the application
-FROM eclipse-temurin:21-jdk-jammy AS build
+FROM eclipse-temurin:21-jdk-jammy
+
 WORKDIR /app
+
+# Install curl for container healthcheck
+RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
 
 # Copy maven wrapper and pom.xml
 COPY mvnw .
 COPY .mvn .mvn
 COPY pom.xml .
 
-# Make mvnw executable
-RUN chmod +x ./mvnw
+# Make mvnw executable and download dependencies (cached in docker layer)
+RUN chmod +x ./mvnw && ./mvnw dependency:go-offline -B
 
-# Download dependencies (this step is cached if pom.xml doesn't change)
-RUN ./mvnw dependency:go-offline -B
-
-# Copy the source code
+# Copy source code
 COPY src src
 
-# Build the application
-RUN ./mvnw package -DskipTests
-
-# Stage 2: Run the application
-FROM eclipse-temurin:21-jre-jammy
-WORKDIR /app
-
-# Install curl for healthcheck
-RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
-
-# Copy the built jar file from the previous stage
-ARG JAR_FILE=target/*.jar
-COPY --from=build /app/${JAR_FILE} app.jar
-
-# Expose the application port
+# Expose port
 EXPOSE 8080
 
-# Run the application
-ENTRYPOINT ["java", "-jar", "app.jar"]
+# Run Spring Boot app with live reload support
+CMD ["./mvnw", "spring-boot:run", "-DskipTests"]
