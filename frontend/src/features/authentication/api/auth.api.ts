@@ -47,6 +47,12 @@ export interface MessageResponseData {
   message: string;
 }
 
+export interface ChangePasswordPayload {
+  currentPassword: string;
+  newPassword: string;
+  confirmPassword: string;
+}
+
 export const loginApi = async (credentials: LoginCredentials): Promise<LoginResponseData> => {
   return await httpClient.post<LoginResponseData>('/auth/login', credentials, { skipAuth: true });
 };
@@ -61,4 +67,8 @@ export const refreshTokenApi = async (): Promise<TokenRefreshResponseData> => {
 
 export const logoutApi = async (): Promise<MessageResponseData> => {
   return await httpClient.post<MessageResponseData>('/auth/logout');
+};
+
+export const changePasswordApi = async (payload: ChangePasswordPayload): Promise<MessageResponseData> => {
+  return await httpClient.put<MessageResponseData>('/auth/password', payload);
 };
