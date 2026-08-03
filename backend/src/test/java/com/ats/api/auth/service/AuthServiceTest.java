@@ -205,4 +205,111 @@ class AuthServiceTest {
         assertThrows(TokenReusedException.class, () -> authService.refreshToken(rawToken, servletResponse));
         verify(refreshTokenRepository).updateStatusByFamilyId(eq(familyId), eq(RefreshTokenStatus.REVOKED));
     }
+
+    @Test
+    @DisplayName("givenValidChangePasswordRequest_whenChangePassword_thenUpdatePasswordAndRevokeTokens")
+    void givenValidChangePasswordRequest_whenChangePassword_thenUpdatePasswordAndRevokeTokens() {
+        UUID userId = UUID.randomUUID();
+        User user = User.builder()
+                .id(userId)
+                .email("user@example.com")
+                .passwordHash("oldEncodedHash")
+                .role(UserRole.CANDIDATE)
+                .status(AccountStatus.ACTIVE)
+                .build();
+
+        com.ats.api.auth.dto.request.ChangePasswordRequest request = new com.ats.api.auth.dto.request.ChangePasswordRequest(
+                "OldPassword123@",
+                "NewPassword456#",
+                "NewPassword456#"
+        );
+
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches("OldPassword123@", "oldEncodedHash")).thenReturn(true);
+        when(passwordEncoder.matches("NewPassword456#", "oldEncodedHash")).thenReturn(false);
+        when(passwordEncoder.encode("NewPassword456#")).thenReturn("newEncodedHash");
+
+        com.ats.api.auth.dto.response.MessageResponse response = authService.changePassword(userId, request);
+
+        assertNotNull(response);
+        assertEquals("newEncodedHash", user.getPasswordHash());
+        verify(userRepository).save(user);
+        verify(refreshTokenRepository).updateStatusByUserId(eq(userId), eq(RefreshTokenStatus.REVOKED));
+    }
+
+    @Test
+    @DisplayName("givenWrongCurrentPassword_whenChangePassword_thenThrowAuthException")
+    void givenWrongCurrentPassword_whenChangePassword_thenThrowAuthException() {
+        UUID userId = UUID.randomUUID();
+        User user = User.builder()
+                .id(userId)
+                .passwordHash("oldEncodedHash")
+                .build();
+
+        com.ats.api.auth.dto.request.ChangePasswordRequest request = new com.ats.api.auth.dto.request.ChangePasswordRequest(
+                "WrongPassword123@",
+                "NewPassword456#",
+                "NewPassword456#"
+        );
+
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches("WrongPassword123@", "oldEncodedHash")).thenReturn(false);
+
+        com.ats.api.auth.exception.AuthException ex = assertThrows(
+                com.ats.api.auth.exception.AuthException.class,
+                () -> authService.changePassword(userId, request)
+        );
+        assertEquals("INVALID_CURRENT_PASSWORD", ex.getCode());
+    }
+
+    @Test
+    @DisplayName("givenSamePasswordAsOld_whenChangePassword_thenThrowAuthException")
+    void givenSamePasswordAsOld_whenChangePassword_thenThrowAuthException() {
+        UUID userId = UUID.randomUUID();
+        User user = User.builder()
+                .id(userId)
+                .passwordHash("oldEncodedHash")
+                .build();
+
+        com.ats.api.auth.dto.request.ChangePasswordRequest request = new com.ats.api.auth.dto.request.ChangePasswordRequest(
+                "OldPassword123@",
+                "OldPassword123@",
+                "OldPassword123@"
+        );
+
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches("OldPassword123@", "oldEncodedHash")).thenReturn(true);
+
+        com.ats.api.auth.exception.AuthException ex = assertThrows(
+                com.ats.api.auth.exception.AuthException.class,
+                () -> authService.changePassword(userId, request)
+        );
+        assertEquals("PASSWORD_SAME_AS_OLD", ex.getCode());
+    }
+
+    @Test
+    @DisplayName("givenConfirmPasswordMismatch_whenChangePassword_thenThrowAuthException")
+    void givenConfirmPasswordMismatch_whenChangePassword_thenThrowAuthException() {
+        UUID userId = UUID.randomUUID();
+        User user = User.builder()
+                .id(userId)
+                .passwordHash("oldEncodedHash")
+                .build();
+
+        com.ats.api.auth.dto.request.ChangePasswordRequest request = new com.ats.api.auth.dto.request.ChangePasswordRequest(
+                "OldPassword123@",
+                "NewPassword456#",
+                "DifferentConfirmPassword789$"
+        );
+
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches("OldPassword123@", "oldEncodedHash")).thenReturn(true);
+        when(passwordEncoder.matches("NewPassword456#", "oldEncodedHash")).thenReturn(false);
+
+        com.ats.api.auth.exception.AuthException ex = assertThrows(
+                com.ats.api.auth.exception.AuthException.class,
+                () -> authService.changePassword(userId, request)
+        );
+        assertEquals("PASSWORD_MISMATCH", ex.getCode());
+    }
 }

@@ -14,7 +14,9 @@ import {
   Trash2,
   Download,
   FileCheck,
-  Loader2
+  Loader2,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 import CandidateSidebar from '../../../layouts/CandidateSidebar';
 import EmployerSidebar from '../../../layouts/EmployerSidebar';
@@ -22,6 +24,7 @@ import EmployerHeader from '../../../layouts/EmployerHeader';
 import CandidateHeader from '../../../layouts/CandidateHeader';
 import { useAuth } from '@/hooks/useAuth';
 import { profileApi, UserProfileResponse, Gender, ExperienceLevel } from '../api/profile.api';
+import { changePasswordApi } from '../../authentication/api/auth.api';
 import { ApiError } from '@/services/httpClient';
 
 interface SettingsProps {
@@ -50,12 +53,83 @@ export default function Settings({ role, onNavigate }: SettingsProps) {
   const [jobTitle, setJobTitle] = useState('frontend');
   const [experienceLevel, setExperienceLevel] = useState<ExperienceLevel>('TWO_TO_THREE');
 
+  // Change Password State
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+
   // Feedback State
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const cvInputRef = useRef<HTMLInputElement>(null);
+
+  const evaluatePasswordStrength = (pwd: string) => {
+    if (!pwd) return { score: 0, label: '', color: '' };
+    let score = 0;
+    if (pwd.length >= 8) score++;
+    if (/[a-z]/.test(pwd) && /[A-Z]/.test(pwd)) score++;
+    if (/\d/.test(pwd)) score++;
+    if (/[@$!%*?&#^()_+\-=\[\]{}|;:,.<>]/.test(pwd)) score++;
+
+    if (score <= 1) return { score: 1, label: 'Yếu', color: 'text-rose-600' };
+    if (score <= 3) return { score: 2, label: 'Trung bình', color: 'text-amber-600' };
+    return { score: 3, label: 'Mạnh', color: 'text-emerald-600' };
+  };
+
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorMessage(null);
+
+    if (!currentPassword) {
+      setErrorMessage('Vui lòng nhập mật khẩu hiện tại.');
+      return;
+    }
+
+    if (newPassword.length < 8) {
+      setErrorMessage('Mật khẩu mới phải có ít nhất 8 ký tự.');
+      return;
+    }
+
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#^()_+\-=\[\]{}|;:,.<>])[A-Za-z\d@$!%*?&#^()_+\-=\[\]{}|;:,.<>]{8,64}$/;
+    if (!passwordRegex.test(newPassword)) {
+      setErrorMessage('Mật khẩu mới phải chứa ít nhất 1 chữ hoa, 1 chữ thường, 1 chữ số và 1 ký tự đặc biệt.');
+      return;
+    }
+
+    if (newPassword === currentPassword) {
+      setErrorMessage('Mật khẩu mới không được giống mật khẩu hiện tại.');
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      setErrorMessage('Mật khẩu xác nhận không trùng khớp với mật khẩu mới.');
+      return;
+    }
+
+    try {
+      setIsChangingPassword(true);
+      const res = await changePasswordApi({
+        currentPassword,
+        newPassword,
+        confirmPassword,
+      });
+
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+      showToast(res.message || 'Đổi mật khẩu thành công! Vui lòng đăng nhập lại với mật khẩu mới.');
+    } catch (err: any) {
+      setErrorMessage(err.message || 'Không thể đổi mật khẩu. Vui lòng kiểm tra lại.');
+    } finally {
+      setIsChangingPassword(false);
+    }
+  };
 
   const isCandidate = profile?.role?.toUpperCase() === 'CANDIDATE' || role === 'candidate';
   const isAdmin = profile?.role?.toUpperCase() === 'ADMIN' || user?.role?.toUpperCase() === 'ADMIN';
@@ -573,36 +647,91 @@ export default function Settings({ role, onNavigate }: SettingsProps) {
               <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
                 <div className="p-6 border-b border-slate-100">
                   <h2 className="text-lg font-bold text-slate-800 mb-1">Mật khẩu & Bảo mật</h2>
-                  <p className="text-sm text-slate-500">Cập nhật mật khẩu và bảo mật tài khoản của bạn.</p>
+                  <p className="text-sm text-slate-500">Cập nhật mật khẩu và quản lý bảo mật tài khoản của bạn.</p>
                 </div>
 
                 <div className="p-6">
-                  <form onSubmit={(e) => { e.preventDefault(); showToast('Tính năng đổi mật khẩu đang được xử lý.'); }} className="space-y-5">
+                  <form onSubmit={handleChangePassword} className="space-y-5">
                     <div className="space-y-1.5">
                       <label className="block text-sm font-medium text-slate-700">Mật khẩu hiện tại</label>
-                      <input
-                        type="password"
-                        placeholder="Nhập mật khẩu hiện tại"
-                        className="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-600 focus:border-indigo-600 outline-none transition-all text-sm"
-                      />
+                      <div className="relative">
+                        <input
+                          type={showCurrentPassword ? 'text' : 'password'}
+                          required
+                          value={currentPassword}
+                          onChange={(e) => setCurrentPassword(e.target.value)}
+                          placeholder="Nhập mật khẩu hiện tại"
+                          className="w-full px-4 py-2.5 pr-10 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-600 focus:border-indigo-600 outline-none transition-all text-sm"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                        >
+                          {showCurrentPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                        </button>
+                      </div>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                       <div className="space-y-1.5">
                         <label className="block text-sm font-medium text-slate-700">Mật khẩu mới</label>
-                        <input
-                          type="password"
-                          placeholder="Nhập mật khẩu mới"
-                          className="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-600 focus:border-indigo-600 outline-none transition-all text-sm"
-                        />
+                        <div className="relative">
+                          <input
+                            type={showNewPassword ? 'text' : 'password'}
+                            required
+                            value={newPassword}
+                            onChange={(e) => setNewPassword(e.target.value)}
+                            placeholder="Nhập mật khẩu mới (tối thiểu 8 ký tự)"
+                            className="w-full px-4 py-2.5 pr-10 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-600 focus:border-indigo-600 outline-none transition-all text-sm"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowNewPassword(!showNewPassword)}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                          >
+                            {showNewPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                          </button>
+                        </div>
+                        {newPassword && (
+                          <div className="mt-2 space-y-1">
+                            <div className="flex items-center justify-between text-xs">
+                              <span className="text-slate-500">Độ mạnh mật khẩu:</span>
+                              <span className={`font-bold ${evaluatePasswordStrength(newPassword).color}`}>
+                                {evaluatePasswordStrength(newPassword).label}
+                              </span>
+                            </div>
+                            <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden flex gap-1">
+                              <div className={`h-full flex-1 transition-all ${evaluatePasswordStrength(newPassword).score >= 1 ? (evaluatePasswordStrength(newPassword).score === 1 ? 'bg-rose-500' : evaluatePasswordStrength(newPassword).score === 2 ? 'bg-amber-500' : 'bg-emerald-500') : 'bg-slate-200'}`}></div>
+                              <div className={`h-full flex-1 transition-all ${evaluatePasswordStrength(newPassword).score >= 2 ? (evaluatePasswordStrength(newPassword).score === 2 ? 'bg-amber-500' : 'bg-emerald-500') : 'bg-slate-200'}`}></div>
+                              <div className={`h-full flex-1 transition-all ${evaluatePasswordStrength(newPassword).score >= 3 ? 'bg-emerald-500' : 'bg-slate-200'}`}></div>
+                            </div>
+                          </div>
+                        )}
                       </div>
+
                       <div className="space-y-1.5">
-                        <label className="block text-sm font-medium text-slate-700">Nhập lại mật khẩu mới</label>
-                        <input
-                          type="password"
-                          placeholder="Nhập lại mật khẩu mới"
-                          className="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-600 focus:border-indigo-600 outline-none transition-all text-sm"
-                        />
+                        <label className="block text-sm font-medium text-slate-700">Xác nhận mật khẩu mới</label>
+                        <div className="relative">
+                          <input
+                            type={showConfirmPassword ? 'text' : 'password'}
+                            required
+                            value={confirmPassword}
+                            onChange={(e) => setConfirmPassword(e.target.value)}
+                            placeholder="Nhập lại mật khẩu mới"
+                            className="w-full px-4 py-2.5 pr-10 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-600 focus:border-indigo-600 outline-none transition-all text-sm"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                          >
+                            {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                          </button>
+                        </div>
+                        {confirmPassword && newPassword !== confirmPassword && (
+                          <p className="text-xs text-rose-500 mt-1 font-medium">Mật khẩu xác nhận không trùng khớp.</p>
+                        )}
                       </div>
                     </div>
 
@@ -614,8 +743,8 @@ export default function Settings({ role, onNavigate }: SettingsProps) {
                             <Shield size={20} />
                           </div>
                           <div>
-                            <p className="text-sm font-bold text-slate-800">Chưa bật xác thực</p>
-                            <p className="text-xs text-slate-500">Tăng cường bảo mật bằng mã xác nhận qua điện thoại.</p>
+                            <p className="text-sm font-bold text-slate-800">Chưa bật xác thực 2FA</p>
+                            <p className="text-xs text-slate-500">Tăng cường bảo mật bằng ứng dụng TOTP Authenticator hoặc SMS.</p>
                           </div>
                         </div>
                         <button type="button" className="text-sm font-medium bg-slate-100 text-slate-700 hover:bg-slate-200 px-4 py-2 rounded-lg transition-colors cursor-pointer">
@@ -627,9 +756,11 @@ export default function Settings({ role, onNavigate }: SettingsProps) {
                     <div className="flex justify-end pt-4 border-t border-slate-100 mt-6">
                       <button
                         type="submit"
-                        className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2.5 rounded-lg text-sm font-medium transition-colors shadow-2xs cursor-pointer"
+                        disabled={isChangingPassword}
+                        className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2.5 rounded-lg text-sm font-medium transition-colors shadow-2xs cursor-pointer flex items-center gap-2 disabled:opacity-60"
                       >
-                        Cập nhật mật khẩu
+                        {isChangingPassword && <Loader2 className="animate-spin" size={16} />}
+                        <span>Cập nhật mật khẩu</span>
                       </button>
                     </div>
                   </form>

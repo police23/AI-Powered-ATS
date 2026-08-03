@@ -263,6 +263,38 @@ public class AuthServiceImpl implements AuthService {
         return new MessageResponse("Đăng xuất thành công");
     }
 
+    @Override
+    @Transactional
+    public MessageResponse changePassword(UUID userId, com.ats.api.auth.dto.request.ChangePasswordRequest request) {
+        log.info("Processing change password request for userId={}", userId);
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new com.ats.api.auth.exception.AuthException("Người dùng không tồn tại", "USER_NOT_FOUND", org.springframework.http.HttpStatus.NOT_FOUND));
+
+        if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPasswordHash())) {
+            log.warn("Change password failed: Invalid current password for userId={}", userId);
+            throw new com.ats.api.auth.exception.AuthException("Mật khẩu hiện tại không chính xác", "INVALID_CURRENT_PASSWORD", org.springframework.http.HttpStatus.BAD_REQUEST);
+        }
+
+        if (passwordEncoder.matches(request.getNewPassword(), user.getPasswordHash())) {
+            log.warn("Change password failed: New password identical to old password for userId={}", userId);
+            throw new com.ats.api.auth.exception.AuthException("Mật khẩu mới không được giống mật khẩu cũ", "PASSWORD_SAME_AS_OLD", org.springframework.http.HttpStatus.BAD_REQUEST);
+        }
+
+        if (!request.getNewPassword().equals(request.getConfirmPassword())) {
+            log.warn("Change password failed: Confirm password mismatch for userId={}", userId);
+            throw new com.ats.api.auth.exception.AuthException("Mật khẩu xác nhận không trùng khớp", "PASSWORD_MISMATCH", org.springframework.http.HttpStatus.BAD_REQUEST);
+        }
+
+        user.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
+        userRepository.save(user);
+
+        refreshTokenRepository.updateStatusByUserId(userId, RefreshTokenStatus.REVOKED);
+        log.info("Password updated successfully and all active refresh tokens revoked for userId={}", userId);
+
+        return new MessageResponse("Đổi mật khẩu thành công. Vui lòng đăng nhập lại với mật khẩu mới.");
+    }
+
     private String generateRawRefreshToken() {
         return UUID.randomUUID() + "-" + UUID.randomUUID();
     }
