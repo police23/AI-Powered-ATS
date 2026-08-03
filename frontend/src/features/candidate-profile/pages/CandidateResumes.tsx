@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   FileText,
   Upload,
@@ -21,6 +21,7 @@ import CandidateSidebar from '../../../layouts/CandidateSidebar';
 import CandidateHeader from '../../../layouts/CandidateHeader';
 import UploadResumeModal, { UploadResumeData } from '../components/UploadResumeModal';
 import PreviewResumeModal from '../components/PreviewResumeModal';
+import { candidateResumeApi, CandidateResumeResponse } from '../api/candidateResume.api';
 
 export interface CandidateResumeItem {
   id: string;
@@ -38,39 +39,8 @@ interface CandidateResumesProps {
 }
 
 export default function CandidateResumes({ onNavigate }: CandidateResumesProps) {
-  // Mock initial resumes data for UI/UX demonstration
-  const [resumes, setResumes] = useState<CandidateResumeItem[]>([
-    {
-      id: 'res-1',
-      title: 'CV Senior Frontend Developer (Tiếng Anh)',
-      fileName: 'NguyenVanA_Senior_Frontend_React.pdf',
-      fileSize: '1.4 MB',
-      uploadDate: '15/07/2026',
-      isDefault: true,
-      aiSkills: ['React 18', 'TypeScript', 'TailwindCSS', 'Redux Toolkit', 'Next.js', 'Jest'],
-      completenessScore: 95
-    },
-    {
-      id: 'res-2',
-      title: 'CV Fullstack Web Developer (General)',
-      fileName: 'NguyenVanA_Fullstack_Dev_2026.pdf',
-      fileSize: '2.1 MB',
-      uploadDate: '01/06/2026',
-      isDefault: false,
-      aiSkills: ['Node.js', 'Spring Boot', 'PostgreSQL', 'Docker', 'React', 'REST API'],
-      completenessScore: 88
-    },
-    {
-      id: 'res-3',
-      title: 'CV Mobile & Frontend Engineer (Tiếng Việt)',
-      fileName: 'NguyenVanA_Mobile_Frontend_VN.pdf',
-      fileSize: '980 KB',
-      uploadDate: '10/05/2026',
-      isDefault: false,
-      aiSkills: ['React Native', 'Flutter', 'TypeScript', 'State Management'],
-      completenessScore: 82
-    }
-  ]);
+  const [resumes, setResumes] = useState<CandidateResumeItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Modal / Interaction states
   const [showUploadModal, setShowUploadModal] = useState(false);
@@ -87,22 +57,59 @@ export default function CandidateResumes({ onNavigate }: CandidateResumesProps) 
     setTimeout(() => setToastMessage(null), 3500);
   };
 
-  const handleSetDefault = (id: string) => {
-    setResumes(prev =>
-      prev.map(item => ({
-        ...item,
-        isDefault: item.id === id
-      }))
-    );
-    const target = resumes.find(r => r.id === id);
-    triggerToast(`Đã đặt "${target?.title || 'CV'}" làm CV mặc định khi ứng tuyển!`);
+  const loadResumes = async () => {
+    try {
+      setIsLoading(true);
+      const data = await candidateResumeApi.getAllResumes();
+      const mapped: CandidateResumeItem[] = data.map(item => ({
+        id: item.id,
+        title: item.title,
+        fileName: item.fileName,
+        fileSize: item.fileSizeFormatted,
+        uploadDate: new Date(item.createdAt).toLocaleDateString('vi-VN'),
+        isDefault: item.isDefault,
+        aiSkills: ['PDF Resume', 'ATS Validated'],
+        completenessScore: 90
+      }));
+      setResumes(mapped);
+    } catch (err) {
+      console.warn('Backend API not reachable or fallback to demo state:', err);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleDeleteResume = (id: string) => {
-    const target = resumes.find(r => r.id === id);
-    setResumes(prev => prev.filter(r => r.id !== id));
-    setDeleteConfirmId(null);
-    triggerToast(`Đã xóa "${target?.title || 'CV'}" thành công.`);
+  useEffect(() => {
+    loadResumes();
+  }, []);
+
+  const handleSetDefault = async (id: string) => {
+    try {
+      await candidateResumeApi.setDefaultResume(id);
+      setResumes(prev =>
+        prev.map(item => ({
+          ...item,
+          isDefault: item.id === id
+        }))
+      );
+      const target = resumes.find(r => r.id === id);
+      triggerToast(`Đã đặt "${target?.title || 'CV'}" làm CV mặc định khi ứng tuyển!`);
+    } catch (err) {
+      triggerToast('Không thể cập nhật CV mặc định.');
+    }
+  };
+
+  const handleDeleteResume = async (id: string) => {
+    try {
+      const target = resumes.find(r => r.id === id);
+      await candidateResumeApi.deleteResume(id);
+      setResumes(prev => prev.filter(r => r.id !== id));
+      setDeleteConfirmId(null);
+      triggerToast(`Đã xóa "${target?.title || 'CV'}" thành công.`);
+    } catch (err) {
+      triggerToast('Không thể xóa tệp CV.');
+      setDeleteConfirmId(null);
+    }
   };
 
   const handleStartRename = (resume: CandidateResumeItem) => {
@@ -110,37 +117,45 @@ export default function CandidateResumes({ onNavigate }: CandidateResumesProps) 
     setEditingTitle(resume.title);
   };
 
-  const handleSaveRename = (id: string) => {
+  const handleSaveRename = async (id: string) => {
     if (!editingTitle.trim()) return;
-    setResumes(prev =>
-      prev.map(item => (item.id === id ? { ...item, title: editingTitle.trim() } : item))
-    );
-    setEditingResumeId(null);
-    triggerToast('Đã cập nhật tên gợi nhớ CV thành công!');
+    try {
+      await candidateResumeApi.updateResumeTitle(id, editingTitle.trim());
+      setResumes(prev =>
+        prev.map(item => (item.id === id ? { ...item, title: editingTitle.trim() } : item))
+      );
+      setEditingResumeId(null);
+      triggerToast('Đã cập nhật tên gợi nhớ CV thành công!');
+    } catch (err) {
+      triggerToast('Không thể đổi tên CV.');
+    }
   };
 
-  const handleUploadSubmit = (data: UploadResumeData) => {
-    const newResume: CandidateResumeItem = {
-      id: `res-${Date.now()}`,
-      title: data.title,
-      fileName: data.file.name,
-      fileSize: (data.file.size / (1024 * 1024)).toFixed(1) + ' MB',
-      uploadDate: new Date().toLocaleDateString('vi-VN'),
-      isDefault: data.setAsDefault || resumes.length === 0,
-      aiSkills: ['JavaScript', 'HTML5/CSS3', 'Git', 'Problem Solving'],
-      completenessScore: 90
-    };
+  const handleUploadSubmit = async (data: UploadResumeData) => {
+    try {
+      const created = await candidateResumeApi.uploadResume(data.file, data.title, data.setAsDefault);
+      const newResumeItem: CandidateResumeItem = {
+        id: created.id,
+        title: created.title,
+        fileName: created.fileName,
+        fileSize: created.fileSizeFormatted,
+        uploadDate: new Date(created.createdAt).toLocaleDateString('vi-VN'),
+        isDefault: created.isDefault,
+        aiSkills: ['PDF Resume', 'ATS Validated'],
+        completenessScore: 90
+      };
 
-    if (data.setAsDefault || resumes.length === 0) {
-      setResumes(prev =>
-        prev.map(r => ({ ...r, isDefault: false })).concat(newResume)
-      );
-    } else {
-      setResumes(prev => [...prev, newResume]);
+      if (created.isDefault) {
+        setResumes(prev => prev.map(r => ({ ...r, isDefault: false })).concat(newResumeItem));
+      } else {
+        setResumes(prev => [newResumeItem, ...prev]);
+      }
+
+      setShowUploadModal(false);
+      triggerToast(`Đã tải lên CV "${newResumeItem.title}" thành công!`);
+    } catch (err: any) {
+      triggerToast(err?.message || 'Có lỗi xảy ra khi tải lên tệp CV.');
     }
-
-    setShowUploadModal(false);
-    triggerToast(`Đã tải lên CV "${newResume.title}" thành công!`);
   };
 
   return (

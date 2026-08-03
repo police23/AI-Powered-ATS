@@ -112,10 +112,12 @@ public class LocalFileStorageServiceImpl implements FileStorageService {
 
             return CandidateResume.builder()
                     .userId(userId)
+                    .title("CV Ứng tuyển")
                     .fileName(originalFilename)
                     .filePath(targetLocation.toString())
                     .fileSizeBytes(file.getSize())
                     .mimeType("application/pdf")
+                    .isDefault(false)
                     .build();
         } catch (IOException ex) {
             log.error("Lỗi khi lưu trữ file CV: {}", ex.getMessage());
