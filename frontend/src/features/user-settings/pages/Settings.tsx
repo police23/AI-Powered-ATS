@@ -57,8 +57,8 @@ export default function Settings({ role, onNavigate }: SettingsProps) {
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const cvInputRef = useRef<HTMLInputElement>(null);
 
-  const isCandidate = profile?.role === 'CANDIDATE' || role === 'candidate';
-  const isAdmin = profile?.role === 'ADMIN' || user?.role === 'ADMIN';
+  const isCandidate = profile?.role?.toUpperCase() === 'CANDIDATE' || role === 'candidate';
+  const isAdmin = profile?.role?.toUpperCase() === 'ADMIN' || user?.role?.toUpperCase() === 'ADMIN';
 
   const showToast = (message: string) => {
     setToastMessage(message);
@@ -110,6 +110,10 @@ export default function Settings({ role, onNavigate }: SettingsProps) {
 
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isAdmin) {
+      setErrorMessage('Tài khoản Quản trị viên không áp dụng mục Hồ sơ cá nhân.');
+      return;
+    }
     if (!fullName.trim() || fullName.trim().length < 2) {
       setErrorMessage('Họ và tên phải có ít nhất 2 ký tự.');
       return;
