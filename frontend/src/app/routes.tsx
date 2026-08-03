@@ -47,10 +47,57 @@ export type ViewType =
   | 'public-company-profile' 
   | 'candidate-company-profile';
 
+const viewToPathMap: Record<ViewType, string> = {
+  'job-board': '/',
+  'public-job-search': '/search',
+  'job-detail': '/job-detail',
+  'candidate-job-detail': '/candidate/job-detail',
+  'login': '/login',
+  'register': '/register',
+  'accept-invite': '/accept-invite',
+  'profile-setup': '/profile-setup',
+  'candidate-dashboard': '/candidate/dashboard',
+  'candidate-job-search': '/candidate/search',
+  'employer-dashboard': '/employer/dashboard',
+  'post-job': '/employer/post-job',
+  'applicant-tracking': '/employer/applicants',
+  'applied-jobs': '/candidate/applications',
+  'saved-jobs': '/candidate/saved-jobs',
+  'employer-jobs': '/employer/jobs',
+  'interview-calendar': '/employer/calendar',
+  'company-profile': '/employer/company',
+  'company-users': '/employer/users',
+  'candidate-settings': '/candidate/settings',
+  'employer-settings': '/employer/settings',
+  'email-templates': '/employer/email-templates',
+  'admin-dashboard': '/admin/dashboard',
+  'admin-users': '/admin/users',
+  'admin-companies': '/admin/companies',
+  'admin-settings': '/admin/settings',
+  'public-company-profile': '/company',
+  'candidate-company-profile': '/candidate/company',
+};
+
+const pathToViewMap: Record<string, ViewType> = Object.entries(viewToPathMap).reduce(
+  (acc, [view, path]) => ({ ...acc, [path]: view as ViewType }),
+  {} as Record<string, ViewType>
+);
+
 export default function AppRoutes() {
   const { user } = useAuth();
+
+  const getViewFromPath = (): ViewType | null => {
+    const pathname = window.location.pathname;
+    if (pathToViewMap[pathname]) {
+      return pathToViewMap[pathname];
+    }
+    return null;
+  };
+
   const [currentView, setCurrentView] = useState<ViewType>(() => {
-    // If user is already authenticated on initial load, take them to their dashboard
+    const pathView = getViewFromPath();
+    if (pathView) return pathView;
+
     const savedUser = localStorage.getItem('ats_user_profile');
     if (savedUser) {
       try {
@@ -65,22 +112,48 @@ export default function AppRoutes() {
     return 'job-board';
   });
 
+  const navigateToView = (newView: ViewType) => {
+    setCurrentView(newView);
+    const targetPath = viewToPathMap[newView] || '/';
+    if (window.location.pathname !== targetPath) {
+      window.history.pushState({}, '', targetPath);
+    }
+  };
+
+  useEffect(() => {
+    const handlePopState = () => {
+      const view = getViewFromPath();
+      if (view) {
+        setCurrentView(view);
+      }
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  useEffect(() => {
+    const targetPath = viewToPathMap[currentView] || '/';
+    if (window.location.pathname !== targetPath) {
+      window.history.replaceState({}, '', targetPath);
+    }
+  }, [currentView]);
+
   const handleAdminNavigation = (item: string) => {
     switch (item) {
       case 'dashboard':
-        setCurrentView('admin-dashboard');
+        navigateToView('admin-dashboard');
         break;
       case 'users':
-        setCurrentView('admin-users');
+        navigateToView('admin-users');
         break;
       case 'companies':
-        setCurrentView('admin-companies');
+        navigateToView('admin-companies');
         break;
       case 'settings':
-        setCurrentView('admin-settings');
+        navigateToView('admin-settings');
         break;
       case 'login':
-        setCurrentView('login');
+        navigateToView('login');
         break;
     }
   };
@@ -88,22 +161,22 @@ export default function AppRoutes() {
   const handleCandidateNavigation = (item: string) => {
     switch (item) {
       case 'discover':
-        setCurrentView('candidate-dashboard');
+        navigateToView('candidate-dashboard');
         break;
       case 'settings':
-        setCurrentView('candidate-settings');
+        navigateToView('candidate-settings');
         break;
       case 'search':
-        setCurrentView('candidate-job-search');
+        navigateToView('candidate-job-search');
         break;
       case 'applied':
-        setCurrentView('applied-jobs');
+        navigateToView('applied-jobs');
         break;
       case 'saved':
-        setCurrentView('saved-jobs');
+        navigateToView('saved-jobs');
         break;
       case 'login':
-        setCurrentView('login');
+        navigateToView('login');
         break;
     }
   };
@@ -111,74 +184,74 @@ export default function AppRoutes() {
   const handleEmployerNavigation = (item: string) => {
     switch (item) {
       case 'dashboard':
-        setCurrentView('employer-dashboard');
+        navigateToView('employer-dashboard');
         break;
       case 'jobs':
-        setCurrentView('employer-jobs');
+        navigateToView('employer-jobs');
         break;
       case 'candidates':
-        setCurrentView('applicant-tracking');
+        navigateToView('applicant-tracking');
         break;
       case 'calendar':
-        setCurrentView('interview-calendar');
+        navigateToView('interview-calendar');
         break;
       case 'company-profile':
-        setCurrentView('company-profile');
+        navigateToView('company-profile');
         break;
       case 'company-users':
-        setCurrentView('company-users');
+        navigateToView('company-users');
         break;
       case 'post-job':
-        setCurrentView('post-job');
+        navigateToView('post-job');
         break;
       case 'settings':
-        setCurrentView('employer-settings');
+        navigateToView('employer-settings');
         break;
       case 'email-templates':
-        setCurrentView('email-templates');
+        navigateToView('email-templates');
         break;
       case 'login':
-        setCurrentView('login');
+        navigateToView('login');
         break;
     }
   };
 
   return currentView === 'job-board' ? (
-    <JobBoard onLoginClick={() => setCurrentView('login')} onJobClick={() => setCurrentView('job-detail')} onSearchClick={() => setCurrentView('public-job-search')} />
+    <JobBoard onLoginClick={() => navigateToView('login')} onJobClick={() => navigateToView('job-detail')} onSearchClick={() => navigateToView('public-job-search')} />
   ) : currentView === 'public-job-search' ? (
-    <PublicJobSearch onLoginClick={() => setCurrentView('login')} onJobClick={() => setCurrentView('job-detail')} onHomeClick={() => setCurrentView('job-board')} />
+    <PublicJobSearch onLoginClick={() => navigateToView('login')} onJobClick={() => navigateToView('job-detail')} onHomeClick={() => navigateToView('job-board')} />
   ) : currentView === 'job-detail' ? (
-    <JobDetail onBack={() => setCurrentView('job-board')} onApply={() => setCurrentView('login')} onViewCompany={() => setCurrentView('public-company-profile')} isPublic={true} onLoginClick={() => setCurrentView('login')} onHomeClick={() => setCurrentView('job-board')} />
+    <JobDetail onBack={() => navigateToView('job-board')} onApply={() => navigateToView('login')} onViewCompany={() => navigateToView('public-company-profile')} isPublic={true} onLoginClick={() => navigateToView('login')} onHomeClick={() => navigateToView('job-board')} />
   ) : currentView === 'login' ? (
     <Login 
-      onBack={() => setCurrentView('job-board')} 
-      onRegisterClick={() => setCurrentView('register')} 
-      onAcceptInviteClick={() => setCurrentView('accept-invite')}
-      onLoginSuccess={(role) => setCurrentView(role === 'admin' ? 'admin-dashboard' : role === 'hr' ? 'employer-dashboard' : 'candidate-dashboard')}
+      onBack={() => navigateToView('job-board')} 
+      onRegisterClick={() => navigateToView('register')} 
+      onAcceptInviteClick={() => navigateToView('accept-invite')}
+      onLoginSuccess={(role) => navigateToView(role === 'admin' ? 'admin-dashboard' : role === 'hr' ? 'employer-dashboard' : 'candidate-dashboard')}
     />
   ) : currentView === 'accept-invite' ? (
     <AcceptInvite 
-      onBack={() => setCurrentView('job-board')} 
-      onComplete={() => setCurrentView('employer-dashboard')}
+      onBack={() => navigateToView('job-board')} 
+      onComplete={() => navigateToView('employer-dashboard')}
     />
   ) : currentView === 'profile-setup' ? (
-    <ProfileSetup onComplete={() => setCurrentView('candidate-dashboard')} />
+    <ProfileSetup onComplete={() => navigateToView('candidate-dashboard')} />
   ) : currentView === 'candidate-dashboard' ? (
-    <CandidateDashboard onNavigate={handleCandidateNavigation} onJobClick={() => setCurrentView('candidate-job-detail')} />
+    <CandidateDashboard onNavigate={handleCandidateNavigation} onJobClick={() => navigateToView('candidate-job-detail')} />
   ) : currentView === 'candidate-job-search' ? (
-    <CandidateJobSearch onNavigate={handleCandidateNavigation} onJobClick={() => setCurrentView('candidate-job-detail')} />
+    <CandidateJobSearch onNavigate={handleCandidateNavigation} onJobClick={() => navigateToView('candidate-job-detail')} />
   ) : currentView === 'candidate-job-detail' ? (
-    <CandidateJobDetail onBack={() => setCurrentView('candidate-job-search')} onApply={() => setCurrentView('candidate-dashboard')} onNavigate={handleCandidateNavigation} onViewCompany={() => setCurrentView('candidate-company-profile')} />
+    <CandidateJobDetail onBack={() => navigateToView('candidate-job-search')} onApply={() => navigateToView('candidate-dashboard')} onNavigate={handleCandidateNavigation} onViewCompany={() => navigateToView('candidate-company-profile')} />
   ) : currentView === 'applied-jobs' ? (
     <AppliedJobs onNavigate={handleCandidateNavigation} />
   ) : currentView === 'saved-jobs' ? (
-    <SavedJobs onNavigate={handleCandidateNavigation} onJobClick={() => setCurrentView('candidate-job-detail')} />
+    <SavedJobs onNavigate={handleCandidateNavigation} onJobClick={() => navigateToView('candidate-job-detail')} />
   ) : currentView === 'employer-dashboard' ? (
-    <EmployerDashboard onCreateJobClick={() => setCurrentView('post-job')} onNavigate={handleEmployerNavigation} />
+    <EmployerDashboard onCreateJobClick={() => navigateToView('post-job')} onNavigate={handleEmployerNavigation} />
   ) : currentView === 'employer-jobs' ? (
     <EmployerJobs onNavigate={handleEmployerNavigation} />
   ) : currentView === 'post-job' ? (
-    <PostJob onBack={() => setCurrentView('employer-jobs')} onComplete={() => setCurrentView('employer-jobs')} onNavigate={handleEmployerNavigation} />
+    <PostJob onBack={() => navigateToView('employer-jobs')} onComplete={() => navigateToView('employer-jobs')} onNavigate={handleEmployerNavigation} />
   ) : currentView === 'applicant-tracking' ? (
     <ApplicantTracking onNavigate={handleEmployerNavigation} />
   ) : currentView === 'interview-calendar' ? (
@@ -202,14 +275,14 @@ export default function AppRoutes() {
   ) : currentView === 'admin-settings' ? (
     <AdminSettings onNavigate={handleAdminNavigation} />
   ) : currentView === 'public-company-profile' ? (
-    <CompanyProfile isCandidateView={true} onBack={() => setCurrentView('job-detail')} />
+    <CompanyProfile isCandidateView={true} onBack={() => navigateToView('job-detail')} />
   ) : currentView === 'candidate-company-profile' ? (
-    <CompanyProfile isCandidateView={true} isCandidatePortal={true} onNavigate={handleCandidateNavigation} onBack={() => setCurrentView('candidate-job-detail')} />
+    <CompanyProfile isCandidateView={true} isCandidatePortal={true} onNavigate={handleCandidateNavigation} onBack={() => navigateToView('candidate-job-detail')} />
   ) : (
     <Register 
-      onBack={() => setCurrentView('job-board')} 
-      onLoginClick={() => setCurrentView('login')} 
-      onRegisterSuccess={(role) => setCurrentView(role === 'hr' ? 'employer-dashboard' : 'profile-setup')} 
+      onBack={() => navigateToView('job-board')} 
+      onLoginClick={() => navigateToView('login')} 
+      onRegisterSuccess={(role) => navigateToView(role === 'hr' ? 'employer-dashboard' : 'profile-setup')} 
     />
   );
 }

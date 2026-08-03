@@ -4,13 +4,13 @@ import { Button, Input } from '@/components';
 import { useAuth } from '@/hooks/useAuth';
 import { ApiError } from '@/services/httpClient';
 
-export default function Login({ 
-  onBack, 
+export default function Login({
+  onBack,
   onRegisterClick,
   onAcceptInviteClick,
-  onLoginSuccess 
-}: { 
-  onBack: () => void; 
+  onLoginSuccess
+}: {
+  onBack: () => void;
   onRegisterClick: () => void;
   onAcceptInviteClick?: () => void;
   onLoginSuccess?: (role: 'candidate' | 'hr' | 'admin') => void;
@@ -39,7 +39,7 @@ export default function Login({
 
       if (onLoginSuccess) {
         const role = response.user.role;
-        const mappedRole: 'candidate' | 'hr' | 'admin' = 
+        const mappedRole: 'candidate' | 'hr' | 'admin' =
           role === 'ADMIN' ? 'admin' : (role === 'HR' || role === 'HR_MANAGER' ? 'hr' : 'candidate');
         onLoginSuccess(mappedRole);
       }
@@ -177,17 +177,6 @@ export default function Login({
                 </Button>
               </form>
 
-              {onAcceptInviteClick && (
-                <div className="mt-4 pt-4 border-t border-slate-100 text-center">
-                  <button
-                    type="button"
-                    onClick={onAcceptInviteClick}
-                    className="text-xs font-medium text-indigo-600 hover:text-indigo-500 hover:underline cursor-pointer"
-                  >
-                    Nhận được lời mời tham gia công ty? Thiết lập mật khẩu tại đây
-                  </button>
-                </div>
-              )}
 
               <p className="mt-6 text-center text-sm text-slate-600">
                 Chưa có tài khoản?{' '}
