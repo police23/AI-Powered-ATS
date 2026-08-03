@@ -16,7 +16,10 @@ export default function CandidateJobSearch({ onNavigate, onJobClick, isPublic = 
   // Filters state
   const [keyword, setKeyword] = useState<string>('');
   const [city, setCity] = useState<string>('');
+  const [category, setCategory] = useState<string>('');
   const [experienceLevel, setExperienceLevel] = useState<string>('');
+  const [salaryRange, setSalaryRange] = useState<string>('');
+  const [level, setLevel] = useState<string>('');
   const [employmentType, setEmploymentType] = useState<string>('');
   const [sortBy, setSortBy] = useState<string>('createdAt');
 
@@ -30,14 +33,29 @@ export default function CandidateJobSearch({ onNavigate, onJobClick, isPublic = 
     }
   };
 
+  const parseSalaryRange = (range: string): { minSalary?: number; maxSalary?: number } => {
+    if (!range) return {};
+    switch (range) {
+      case 'UNDER_10M': return { maxSalary: 10000000 };
+      case '10M_15M': return { minSalary: 10000000, maxSalary: 15000000 };
+      case '15M_20M': return { minSalary: 15000000, maxSalary: 20000000 };
+      case '20M_30M': return { minSalary: 20000000, maxSalary: 30000000 };
+      case 'OVER_30M': return { minSalary: 30000000 };
+      default: return {};
+    }
+  };
+
   const fetchJobs = async () => {
     try {
       setLoading(true);
+      const salaryFilter = parseSalaryRange(salaryRange);
       const res = await jobSearchApi.searchJobs({
         keyword: keyword || undefined,
         city: city || undefined,
         experienceLevel: experienceLevel || undefined,
         employmentType: employmentType || undefined,
+        minSalary: salaryFilter.minSalary,
+        maxSalary: salaryFilter.maxSalary,
         page,
         size: 10,
         sortBy,
@@ -92,7 +110,10 @@ export default function CandidateJobSearch({ onNavigate, onJobClick, isPublic = 
   const handleResetFilter = () => {
     setKeyword('');
     setCity('');
+    setCategory('');
     setExperienceLevel('');
+    setSalaryRange('');
+    setLevel('');
     setEmploymentType('');
     setPage(0);
     setTimeout(() => {
@@ -186,6 +207,23 @@ export default function CandidateJobSearch({ onNavigate, onJobClick, isPublic = 
               <h2 className="text-lg font-bold text-slate-800">Lọc nâng cao</h2>
             </div>
             
+            {/* Category Filter */}
+            <div className="mb-6">
+              <h3 className="font-bold text-slate-700 mb-3">Theo danh mục nghề</h3>
+              <select 
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-600 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 cursor-pointer"
+              >
+                <option value="">Tất cả danh mục</option>
+                <option value="IT">Công nghệ thông tin</option>
+                <option value="MARKETING">Marketing / PR</option>
+                <option value="SALES">Kinh doanh / Sales</option>
+                <option value="HR">Nhân sự</option>
+                <option value="FINANCE">Tài chính / Kế toán</option>
+              </select>
+            </div>
+
             {/* Experience Filter */}
             <div className="mb-6">
               <h3 className="font-bold text-slate-700 mb-3">Kinh nghiệm</h3>
@@ -201,6 +239,40 @@ export default function CandidateJobSearch({ onNavigate, onJobClick, isPublic = 
                 <option value="TWO_TO_THREE">2 - 3 năm</option>
                 <option value="THREE_TO_FIVE">3 - 5 năm</option>
                 <option value="OVER_FIVE">Trên 5 năm</option>
+              </select>
+            </div>
+
+            {/* Salary Filter */}
+            <div className="mb-6">
+              <h3 className="font-bold text-slate-700 mb-3">Mức lương</h3>
+              <select 
+                value={salaryRange}
+                onChange={(e) => setSalaryRange(e.target.value)}
+                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-600 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 cursor-pointer"
+              >
+                <option value="">Tất cả mức lương</option>
+                <option value="UNDER_10M">Dưới 10 triệu</option>
+                <option value="10M_15M">10 - 15 triệu</option>
+                <option value="15M_20M">15 - 20 triệu</option>
+                <option value="20M_30M">20 - 30 triệu</option>
+                <option value="OVER_30M">Trên 30 triệu</option>
+              </select>
+            </div>
+
+            {/* Level Filter */}
+            <div className="mb-6">
+              <h3 className="font-bold text-slate-700 mb-3">Cấp bậc</h3>
+              <select 
+                value={level}
+                onChange={(e) => setLevel(e.target.value)}
+                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-600 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 cursor-pointer"
+              >
+                <option value="">Tất cả cấp bậc</option>
+                <option value="INTERN">Thực tập sinh</option>
+                <option value="STAFF">Nhân viên</option>
+                <option value="LEAD">Trưởng nhóm</option>
+                <option value="MANAGER">Trưởng phòng / Quản lý</option>
+                <option value="DIRECTOR">Giám đốc</option>
               </select>
             </div>
 
