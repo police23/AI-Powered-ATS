@@ -65,4 +65,16 @@ export const jobSearchApi = {
   getJobDetail: async (jobId: string): Promise<JobDetail> => {
     return httpClient.get<JobDetail>(`/jobs/${jobId}`);
   },
+
+  saveJob: async (jobId: string): Promise<{ message: string }> => {
+    return httpClient.post<{ message: string }>(`/candidates/me/saved-jobs/${jobId}`);
+  },
+
+  unsaveJob: async (jobId: string): Promise<{ message: string }> => {
+    return httpClient.delete<{ message: string }>(`/candidates/me/saved-jobs/${jobId}`);
+  },
+
+  getSavedJobs: async (): Promise<JobSummary[]> => {
+    return httpClient.get<JobSummary[]>('/candidates/me/saved-jobs');
+  },
 };
