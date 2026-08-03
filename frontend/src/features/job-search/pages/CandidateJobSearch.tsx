@@ -1,12 +1,78 @@
-import React from 'react';
-import { Search, MapPin, Sparkles, Briefcase, Filter, Check, ArrowDownUp, ChevronDown, Heart } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Search, MapPin, Briefcase, Filter, ArrowDownUp, Loader2 } from 'lucide-react';
 
-import { mockJobs } from '../../../utils/data';
-import { Job } from '../../../types';
 import CandidateSidebar from '../../../layouts/CandidateSidebar';
 import CandidateHeader from '../../../layouts/CandidateHeader';
+import { jobSearchApi, JobSummary } from '../api/jobSearch.api';
 
-export default function CandidateJobSearch({ onNavigate, onJobClick, isPublic = false, onLoginClick }: { onNavigate?: (item: string) => void, onJobClick?: () => void, isPublic?: boolean, onLoginClick?: () => void }) {
+export default function CandidateJobSearch({ onNavigate, onJobClick, isPublic = false, onLoginClick }: { onNavigate?: (item: string) => void, onJobClick?: (jobId: string) => void, isPublic?: boolean, onLoginClick?: () => void }) {
+  const [jobs, setJobs] = useState<JobSummary[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [page, setPage] = useState<number>(0);
+  const [totalPages, setTotalPages] = useState<number>(0);
+  const [totalElements, setTotalElements] = useState<number>(0);
+
+  // Filters state
+  const [keyword, setKeyword] = useState<string>('');
+  const [city, setCity] = useState<string>('');
+  const [experienceLevel, setExperienceLevel] = useState<string>('');
+  const [employmentType, setEmploymentType] = useState<string>('');
+  const [sortBy, setSortBy] = useState<string>('createdAt');
+
+  const fetchJobs = async () => {
+    try {
+      setLoading(true);
+      const res = await jobSearchApi.searchJobs({
+        keyword: keyword || undefined,
+        city: city || undefined,
+        experienceLevel: experienceLevel || undefined,
+        employmentType: employmentType || undefined,
+        page,
+        size: 10,
+        sortBy,
+        sortOrder: 'desc',
+      });
+      setJobs(res.content || []);
+      setTotalPages(res.totalPages || 0);
+      setTotalElements(res.totalElements || 0);
+    } catch (err) {
+      console.error('Lỗi khi tải danh sách việc làm:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchJobs();
+  }, [page, sortBy]);
+
+  const handleSearchSubmit = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    setPage(0);
+    fetchJobs();
+  };
+
+  const handleResetFilter = () => {
+    setKeyword('');
+    setCity('');
+    setExperienceLevel('');
+    setEmploymentType('');
+    setPage(0);
+    setTimeout(() => {
+      fetchJobs();
+    }, 0);
+  };
+
+  const formatSalary = (job: JobSummary) => {
+    if (job.isNegotiableSalary) return 'Lương thỏa thuận';
+    if (job.salaryMin && job.salaryMax) {
+      return `${(job.salaryMin / 1000000).toFixed(0)} - ${(job.salaryMax / 1000000).toFixed(0)} triệu ${job.currency || 'VND'}`;
+    }
+    if (job.salaryMin) return `Từ ${(job.salaryMin / 1000000).toFixed(0)} triệu ${job.currency || 'VND'}`;
+    if (job.salaryMax) return `Đến ${(job.salaryMax / 1000000).toFixed(0)} triệu ${job.currency || 'VND'}`;
+    return 'Lương thỏa thuận';
+  };
+
   return (
     <div className={`min-h-screen bg-slate-50 font-sans text-slate-800 flex ${isPublic ? 'flex-col' : 'flex-col md:flex-row'}`}>
       {!isPublic && <CandidateSidebar activeItem="search" onNavigate={onNavigate} />}
@@ -33,40 +99,44 @@ export default function CandidateJobSearch({ onNavigate, onJobClick, isPublic = 
             </div>
           </header>
         )}
+
         {/* Search Header */}
         <div className="bg-white border-b border-slate-200 px-6 py-8 sm:py-12">
           <div className="max-w-4xl mx-auto">
             <h1 className="text-2xl sm:text-3xl font-bold text-slate-800 mb-2">Tìm kiếm việc làm</h1>
             <p className="text-slate-500 mb-8">Khám phá hàng ngàn cơ hội việc làm IT chất lượng cao.</p>
             
-            {/* Search Bar */}
-            <div className="flex flex-col gap-3 rounded-xl bg-white p-2 shadow-sm border border-slate-200 md:flex-row md:items-center mb-4">
+            {/* Search Bar Form */}
+            <form onSubmit={handleSearchSubmit} className="flex flex-col gap-3 rounded-xl bg-white p-2 shadow-sm border border-slate-200 md:flex-row md:items-center mb-4">
               <div className="flex flex-[2] items-center gap-3 px-3 py-2 md:border-r md:border-slate-200">
                 <Search size={20} className="text-slate-400" />
                 <input 
                   type="text" 
-                  placeholder="Tìm theo tên việc làm" 
+                  value={keyword}
+                  onChange={(e) => setKeyword(e.target.value)}
+                  placeholder="Tìm theo tên việc làm hoặc công ty" 
                   className="w-full bg-transparent text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none"
                 />
               </div>
               <div className="flex flex-1 items-center gap-3 px-3 py-2">
                 <MapPin size={20} className="text-slate-400 shrink-0" />
-                <select className="w-full bg-transparent text-sm text-slate-700 focus:outline-none cursor-pointer">
+                <select 
+                  value={city}
+                  onChange={(e) => setCity(e.target.value)}
+                  className="w-full bg-transparent text-sm text-slate-700 focus:outline-none cursor-pointer"
+                >
                   <option value="">Tất cả địa điểm</option>
                   <option value="HCM">Hồ Chí Minh</option>
                   <option value="HN">Hà Nội</option>
                   <option value="DN">Đà Nẵng</option>
                   <option value="CT">Cần Thơ</option>
                   <option value="HP">Hải Phòng</option>
-                  <option value="Khac">Khác</option>
                 </select>
               </div>
-              <button className="rounded-lg bg-indigo-600 px-6 py-2.5 text-sm font-semibold text-white transition-all hover:bg-indigo-700 hover:shadow-md">
+              <button type="submit" className="rounded-lg bg-indigo-600 px-6 py-2.5 text-sm font-semibold text-white transition-all hover:bg-indigo-700 hover:shadow-md cursor-pointer">
                 Tìm kiếm
               </button>
-            </div>
-
-
+            </form>
           </div>
         </div>
 
@@ -79,106 +149,122 @@ export default function CandidateJobSearch({ onNavigate, onJobClick, isPublic = 
               <h2 className="text-lg font-bold text-slate-800">Lọc nâng cao</h2>
             </div>
             
-            {/* Category Filter */}
-            <div className="mb-6">
-              <h3 className="font-bold text-slate-700 mb-3">Theo danh mục nghề</h3>
-              <select className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-600 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 cursor-pointer">
-                <option value="">Tất cả danh mục</option>
-                <option value="1">Marketing</option>
-                <option value="2">Marketing/PR/Quảng cáo khác</option>
-                <option value="3">Quan hệ Công chúng (PR)</option>
-                <option value="4">Sales Thương mại điện tử</option>
-                <option value="5">Quản lý kinh doanh</option>
-                <option value="6">Công nghệ thông tin</option>
-              </select>
-            </div>
-
             {/* Experience Filter */}
             <div className="mb-6">
-              <h3 className="font-bold text-slate-700 mb-4">Kinh nghiệm</h3>
-              <div className="grid grid-cols-2 gap-y-3 gap-x-2">
-                {[
-                  'Không yêu cầu', 'Dưới 1 năm',
-                  '1 năm', '2 năm',
-                  '3 năm', '4 năm',
-                  '5 năm', 'Trên 5 năm'
-                ].map((exp, idx) => (
-                  <label key={idx} className="flex items-center gap-2 cursor-pointer group">
-                    <input type="checkbox" className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer" />
-                    <span className="text-sm text-slate-600 group-hover:text-slate-800 truncate" title={exp}>{exp}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-
-            {/* Salary Filter */}
-            <div className="mb-6">
-              <h3 className="font-bold text-slate-700 mb-3">Mức lương</h3>
-              <select className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-600 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 cursor-pointer">
-                <option value="">Tất cả mức lương</option>
-                <option value="1">Dưới 10 triệu</option>
-                <option value="2">10 - 15 triệu</option>
-                <option value="3">15 - 20 triệu</option>
-                <option value="4">20 - 30 triệu</option>
-                <option value="5">Trên 30 triệu</option>
-                <option value="6">Thỏa thuận</option>
-              </select>
-            </div>
-
-            {/* Level Filter */}
-            <div className="mb-6">
-              <h3 className="font-bold text-slate-700 mb-3">Cấp bậc</h3>
-              <select className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-600 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 cursor-pointer">
-                <option value="">Tất cả cấp bậc</option>
-                <option value="1">Thực tập sinh</option>
-                <option value="2">Nhân viên</option>
-                <option value="3">Trưởng nhóm</option>
-                <option value="4">Trưởng phòng</option>
-                <option value="5">Phó giám đốc</option>
-                <option value="6">Giám đốc</option>
-                <option value="7">Quản lý cấp cao</option>
+              <h3 className="font-bold text-slate-700 mb-3">Kinh nghiệm</h3>
+              <select 
+                value={experienceLevel}
+                onChange={(e) => setExperienceLevel(e.target.value)}
+                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-600 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 cursor-pointer"
+              >
+                <option value="">Tất cả kinh nghiệm</option>
+                <option value="FRESHER">Mới tốt nghiệp / Fresher</option>
+                <option value="UNDER_ONE_YEAR">Dưới 1 năm</option>
+                <option value="ONE_TO_TWO">1 - 2 năm</option>
+                <option value="TWO_TO_THREE">2 - 3 năm</option>
+                <option value="THREE_TO_FIVE">3 - 5 năm</option>
+                <option value="OVER_FIVE">Trên 5 năm</option>
               </select>
             </div>
 
             {/* Job Type Filter */}
             <div className="mb-8">
               <h3 className="font-bold text-slate-700 mb-3">Loại hình làm việc</h3>
-              <select className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-600 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 cursor-pointer">
-                <option value="">Tất cả</option>
-                <option value="1">Toàn thời gian</option>
-                <option value="2">Bán thời gian</option>
-                <option value="4">Remote</option>
+              <select 
+                value={employmentType}
+                onChange={(e) => setEmploymentType(e.target.value)}
+                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-600 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 cursor-pointer"
+              >
+                <option value="">Tất cả hình thức</option>
+                <option value="FULL_TIME">Toàn thời gian (Full-time)</option>
+                <option value="PART_TIME">Bán thời gian (Part-time)</option>
+                <option value="REMOTE">Làm việc từ xa (Remote)</option>
+                <option value="HYBRID">Làm việc linh hoạt (Hybrid)</option>
+                <option value="CONTRACT">Hợp đồng ngắn hạn</option>
               </select>
             </div>
 
             {/* Action Buttons */}
             <div className="flex items-center gap-2.5 pt-4 border-t border-slate-100">
-              <button className="flex-[2] px-3 py-2 bg-slate-100 text-slate-600 text-sm font-semibold rounded-full hover:bg-slate-200 transition-colors text-center whitespace-nowrap">
-                Xóa bộ lọc
+              <button 
+                onClick={handleResetFilter}
+                className="flex-[2] px-3 py-2 bg-slate-100 text-slate-600 text-sm font-semibold rounded-full hover:bg-slate-200 transition-colors text-center whitespace-nowrap cursor-pointer"
+              >
+                Xóa lọc
               </button>
-              <button className="flex-[3] px-3 py-2 bg-indigo-50 text-indigo-600 text-sm font-semibold rounded-full border border-indigo-500 hover:bg-indigo-100 transition-colors text-center whitespace-nowrap">
-                Áp dụng bộ lọc
+              <button 
+                onClick={() => handleSearchSubmit()}
+                className="flex-[3] px-3 py-2 bg-indigo-50 text-indigo-600 text-sm font-semibold rounded-full border border-indigo-500 hover:bg-indigo-100 transition-colors text-center whitespace-nowrap cursor-pointer"
+              >
+                Áp dụng
               </button>
             </div>
           </div>
 
           {/* Main Results */}
           <div className="flex-1 min-w-0">
-            <div className="flex flex-col xl:flex-row xl:items-center justify-end mb-6 gap-4">
+            <div className="flex flex-col xl:flex-row xl:items-center justify-between mb-6 gap-4">
+              <span className="text-sm font-medium text-slate-500">
+                Tìm thấy <strong className="text-slate-800">{totalElements}</strong> cơ hội việc làm phù hợp
+              </span>
               <div className="flex items-center gap-2 text-sm text-slate-600">
                 <span className="shrink-0 font-medium flex items-center gap-1"><ArrowDownUp size={14} /> Sắp xếp theo:</span>
-                <select className="rounded-full border border-slate-200 bg-white px-4 py-1.5 text-sm font-medium text-slate-700 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 cursor-pointer shadow-sm">
-                  <option value="relevance">Độ phù hợp</option>
-                  <option value="newest">Đăng tuyển gần đây</option>
+                <select 
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value)}
+                  className="rounded-full border border-slate-200 bg-white px-4 py-1.5 text-sm font-medium text-slate-700 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 cursor-pointer shadow-sm"
+                >
+                  <option value="createdAt">Đăng tuyển gần đây</option>
+                  <option value="salaryMax">Lương cao nhất</option>
+                  <option value="viewsCount">Lượt xem nhiều nhất</option>
                 </select>
               </div>
             </div>
             
-            <div className="flex flex-col gap-4">
-              {mockJobs.map((job) => (
-                <JobCard key={job.id} job={job} onClick={() => onJobClick && onJobClick()} />
-              ))}
-            </div>
+            {loading ? (
+              <div className="flex flex-col items-center justify-center py-16 gap-3 text-slate-400">
+                <Loader2 size={32} className="animate-spin text-indigo-600" />
+                <span className="text-sm">Đang tìm kiếm bài tuyển dụng...</span>
+              </div>
+            ) : jobs.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-16 rounded-xl border border-dashed border-slate-300 bg-white text-center p-8">
+                <Briefcase size={40} className="text-slate-300 mb-3" />
+                <h3 className="text-base font-bold text-slate-700">Không tìm thấy việc làm phù hợp</h3>
+                <p className="text-xs text-slate-500 mt-1 max-w-sm">Thử thay đổi từ khóa tìm kiếm hoặc bỏ chọn một số tiêu chí lọc để xem thêm kết quả.</p>
+                <button onClick={handleResetFilter} className="mt-4 px-4 py-2 bg-indigo-50 text-indigo-600 rounded-lg text-xs font-semibold hover:bg-indigo-100 transition-colors">
+                  Xóa bộ lọc
+                </button>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-4">
+                {jobs.map((job) => (
+                  <JobCard key={job.id} job={job} salaryText={formatSalary(job)} onClick={() => onJobClick && onJobClick(job.id)} />
+                ))}
+              </div>
+            )}
+
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-center gap-2 mt-8">
+                <button
+                  disabled={page === 0}
+                  onClick={() => setPage(prev => Math.max(0, prev - 1))}
+                  className="px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-semibold text-slate-600 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-100"
+                >
+                  Trang trước
+                </button>
+                <span className="text-xs text-slate-500 font-medium px-2">
+                  Trang {page + 1} / {totalPages}
+                </span>
+                <button
+                  disabled={page >= totalPages - 1}
+                  onClick={() => setPage(prev => prev + 1)}
+                  className="px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-semibold text-slate-600 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-100"
+                >
+                  Trang sau
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </main>
@@ -186,49 +272,46 @@ export default function CandidateJobSearch({ onNavigate, onJobClick, isPublic = 
   );
 }
 
-const JobCard: React.FC<{ job: Job, onClick: () => void }> = ({ job, onClick }) => {
+const JobCard: React.FC<{ job: JobSummary, salaryText: string, onClick: () => void }> = ({ job, salaryText, onClick }) => {
   return (
     <div onClick={onClick} className="group relative flex flex-col justify-between rounded-xl border border-slate-200 bg-white p-4 transition-all hover:border-indigo-200 hover:shadow-md cursor-pointer">
       <div>
         <div className="mb-2.5 flex items-start justify-between">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-100 bg-slate-50 font-bold text-slate-500 text-base shrink-0">
-            {job.company.charAt(0)}
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-100 bg-slate-50 font-bold text-slate-500 text-base shrink-0 overflow-hidden">
+            {job.companyLogo ? (
+              <img src={job.companyLogo} alt={job.companyName} className="h-full w-full object-cover" />
+            ) : (
+              job.companyName.charAt(0)
+            )}
           </div>
           <div className="flex flex-col items-end gap-1">
-            <span className="inline-flex items-center rounded bg-green-50 px-2 py-0.5 text-[11px] font-bold text-green-700 border border-green-200">
-              Phù hợp : 98%
-            </span>
-            <span className="text-[11px] text-slate-400">Đăng tuyển {job.postedAt}</span>
+            <span className="text-[11px] text-slate-400">{job.viewsCount || 0} lượt xem</span>
           </div>
         </div>
         
         <h3 className="mb-1 text-base font-bold text-slate-800 group-hover:text-indigo-600 transition-colors line-clamp-1">
           {job.title}
         </h3>
-        <p className="mb-2 text-xs font-medium text-slate-500">{job.company}</p>
+        <p className="mb-2 text-xs font-medium text-slate-500">{job.companyName}</p>
         
         <div className="mb-2 flex flex-wrap gap-1.5">
-          {job.tags.map(tag => (
-            <span key={tag} className="rounded-md bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600">
-              {tag}
-            </span>
-          ))}
+          <span className="rounded-md bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600">
+            {job.employmentType}
+          </span>
+          <span className="rounded-md bg-indigo-50 px-2 py-0.5 text-[11px] font-medium text-indigo-600">
+            {job.experienceLevel}
+          </span>
         </div>
       </div>
       
       <div className="mt-2 flex flex-col sm:flex-row sm:items-end justify-between border-t border-slate-100 pt-2.5 gap-2">
         <div className="flex flex-col">
-          <span className="text-sm font-bold text-green-600">{job.salary}</span>
+          <span className="text-sm font-bold text-green-600">{salaryText}</span>
           <span className="text-xs text-slate-400 flex items-center gap-1 mt-0.5">
-            <MapPin size={12} /> {job.location}
-          </span>
-        </div>
-        <div className="flex flex-col items-start sm:items-end">
-          <span className="text-[11px] font-medium text-rose-500 mt-0.5 bg-rose-50 px-1.5 py-0.5 rounded border border-rose-100">
-            Hạn ứng tuyển: 30/12/2026
+            <MapPin size={12} /> {job.city} {job.addressDetail ? `- ${job.addressDetail}` : ''}
           </span>
         </div>
       </div>
     </div>
   );
-}
+};
