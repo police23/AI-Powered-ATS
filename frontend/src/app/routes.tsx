@@ -5,7 +5,7 @@ import { AdminCompanies } from '../features/admin-companies';
 import { AdminSettings } from '../features/platform-settings';
 import { AcceptInvite, Login, Register } from '../features/authentication';
 import { CandidateDashboard } from '../features/candidate-dashboard';
-import { ProfileSetup } from '../features/candidate-profile';
+import { ProfileSetup, CandidateResumes } from '../features/candidate-profile';
 import { ApplicantTracking, InterviewCalendar } from '../features/applicant-tracking';
 import { CompanyProfile, CompanyUsers } from '../features/company-management';
 import { EmailTemplates } from '../features/email-templates';
@@ -28,6 +28,7 @@ export type ViewType =
   | 'profile-setup' 
   | 'candidate-dashboard' 
   | 'candidate-job-search' 
+  | 'candidate-resumes'
   | 'employer-dashboard' 
   | 'post-job' 
   | 'applicant-tracking' 
@@ -58,6 +59,7 @@ const viewToPathMap: Record<ViewType, string> = {
   'profile-setup': '/profile-setup',
   'candidate-dashboard': '/candidate/dashboard',
   'candidate-job-search': '/candidate/search',
+  'candidate-resumes': '/candidate/resumes',
   'employer-dashboard': '/employer/dashboard',
   'post-job': '/employer/post-job',
   'applicant-tracking': '/employer/applicants',
@@ -175,6 +177,10 @@ export default function AppRoutes() {
       case 'saved':
         navigateToView('saved-jobs');
         break;
+      case 'candidate-profile':
+      case 'resumes':
+        navigateToView('candidate-resumes');
+        break;
       case 'login':
         navigateToView('login');
         break;
@@ -240,6 +246,8 @@ export default function AppRoutes() {
     <CandidateDashboard onNavigate={handleCandidateNavigation} onJobClick={() => navigateToView('candidate-job-detail')} />
   ) : currentView === 'candidate-job-search' ? (
     <CandidateJobSearch onNavigate={handleCandidateNavigation} onJobClick={() => navigateToView('candidate-job-detail')} />
+  ) : currentView === 'candidate-resumes' ? (
+    <CandidateResumes onNavigate={handleCandidateNavigation} />
   ) : currentView === 'candidate-job-detail' ? (
     <CandidateJobDetail onBack={() => navigateToView('candidate-job-search')} onApply={() => navigateToView('candidate-dashboard')} onNavigate={handleCandidateNavigation} onViewCompany={() => navigateToView('candidate-company-profile')} />
   ) : currentView === 'applied-jobs' ? (
