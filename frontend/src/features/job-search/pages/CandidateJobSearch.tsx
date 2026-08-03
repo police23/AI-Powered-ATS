@@ -134,7 +134,7 @@ export default function CandidateJobSearch({ onNavigate, onJobClick, isPublic = 
   return (
     <div className={`min-h-screen bg-slate-50 font-sans text-slate-800 flex ${isPublic ? 'flex-col' : 'flex-col md:flex-row'}`}>
       {!isPublic && <CandidateSidebar activeItem="search" onNavigate={onNavigate} />}
-      
+
       {/* Main Content */}
       <main className="flex-1 flex flex-col min-w-0 h-screen overflow-y-auto">
         {!isPublic && <CandidateHeader title="Tìm kiếm việc làm" onNavigate={onNavigate} />}
@@ -163,22 +163,22 @@ export default function CandidateJobSearch({ onNavigate, onJobClick, isPublic = 
           <div className="max-w-4xl mx-auto">
             <h1 className="text-2xl sm:text-3xl font-bold text-slate-800 mb-2">Tìm kiếm việc làm</h1>
             <p className="text-slate-500 mb-8">Khám phá hàng ngàn cơ hội việc làm IT chất lượng cao.</p>
-            
+
             {/* Search Bar Form */}
             <form onSubmit={handleSearchSubmit} className="flex flex-col gap-3 rounded-xl bg-white p-2 shadow-sm border border-slate-200 md:flex-row md:items-center mb-4">
               <div className="flex flex-[2] items-center gap-3 px-3 py-2 md:border-r md:border-slate-200">
                 <Search size={20} className="text-slate-400" />
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   value={keyword}
                   onChange={(e) => setKeyword(e.target.value)}
-                  placeholder="Tìm theo tên việc làm hoặc công ty" 
+                  placeholder="Tìm theo tên việc làm hoặc công ty"
                   className="w-full bg-transparent text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none"
                 />
               </div>
               <div className="flex flex-1 items-center gap-3 px-3 py-2">
                 <MapPin size={20} className="text-slate-400 shrink-0" />
-                <select 
+                <select
                   value={city}
                   onChange={(e) => setCity(e.target.value)}
                   className="w-full bg-transparent text-sm text-slate-700 focus:outline-none cursor-pointer"
@@ -206,11 +206,11 @@ export default function CandidateJobSearch({ onNavigate, onJobClick, isPublic = 
               <Filter size={20} className="text-indigo-600" />
               <h2 className="text-lg font-bold text-slate-800">Lọc nâng cao</h2>
             </div>
-            
+
             {/* Category Filter */}
             <div className="mb-6">
               <h3 className="font-bold text-slate-700 mb-3">Theo danh mục nghề</h3>
-              <select 
+              <select
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
                 className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-600 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 cursor-pointer"
@@ -227,7 +227,7 @@ export default function CandidateJobSearch({ onNavigate, onJobClick, isPublic = 
             {/* Experience Filter */}
             <div className="mb-6">
               <h3 className="font-bold text-slate-700 mb-3">Kinh nghiệm</h3>
-              <select 
+              <select
                 value={experienceLevel}
                 onChange={(e) => setExperienceLevel(e.target.value)}
                 className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-600 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 cursor-pointer"
@@ -245,7 +245,7 @@ export default function CandidateJobSearch({ onNavigate, onJobClick, isPublic = 
             {/* Salary Filter */}
             <div className="mb-6">
               <h3 className="font-bold text-slate-700 mb-3">Mức lương</h3>
-              <select 
+              <select
                 value={salaryRange}
                 onChange={(e) => setSalaryRange(e.target.value)}
                 className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-600 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 cursor-pointer"
@@ -262,7 +262,7 @@ export default function CandidateJobSearch({ onNavigate, onJobClick, isPublic = 
             {/* Level Filter */}
             <div className="mb-6">
               <h3 className="font-bold text-slate-700 mb-3">Cấp bậc</h3>
-              <select 
+              <select
                 value={level}
                 onChange={(e) => setLevel(e.target.value)}
                 className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-600 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 cursor-pointer"
@@ -279,7 +279,7 @@ export default function CandidateJobSearch({ onNavigate, onJobClick, isPublic = 
             {/* Job Type Filter */}
             <div className="mb-8">
               <h3 className="font-bold text-slate-700 mb-3">Loại hình làm việc</h3>
-              <select 
+              <select
                 value={employmentType}
                 onChange={(e) => setEmploymentType(e.target.value)}
                 className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-600 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 cursor-pointer"
@@ -295,13 +295,13 @@ export default function CandidateJobSearch({ onNavigate, onJobClick, isPublic = 
 
             {/* Action Buttons */}
             <div className="flex items-center gap-2.5 pt-4 border-t border-slate-100">
-              <button 
+              <button
                 onClick={handleResetFilter}
                 className="flex-[2] px-3 py-2 bg-slate-100 text-slate-600 text-sm font-semibold rounded-full hover:bg-slate-200 transition-colors text-center whitespace-nowrap cursor-pointer"
               >
                 Xóa lọc
               </button>
-              <button 
+              <button
                 onClick={() => handleSearchSubmit()}
                 className="flex-[3] px-3 py-2 bg-indigo-50 text-indigo-600 text-sm font-semibold rounded-full border border-indigo-500 hover:bg-indigo-100 transition-colors text-center whitespace-nowrap cursor-pointer"
               >
@@ -318,7 +318,7 @@ export default function CandidateJobSearch({ onNavigate, onJobClick, isPublic = 
               </span>
               <div className="flex items-center gap-2 text-sm text-slate-600">
                 <span className="shrink-0 font-medium flex items-center gap-1"><ArrowDownUp size={14} /> Sắp xếp theo:</span>
-                <select 
+                <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value)}
                   className="rounded-full border border-slate-200 bg-white px-4 py-1.5 text-sm font-medium text-slate-700 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 cursor-pointer shadow-sm"
@@ -329,7 +329,7 @@ export default function CandidateJobSearch({ onNavigate, onJobClick, isPublic = 
                 </select>
               </div>
             </div>
-            
+
             {loading ? (
               <div className="flex flex-col items-center justify-center py-16 gap-3 text-slate-400">
                 <Loader2 size={32} className="animate-spin text-indigo-600" />
@@ -347,13 +347,13 @@ export default function CandidateJobSearch({ onNavigate, onJobClick, isPublic = 
             ) : (
               <div className="flex flex-col gap-4">
                 {jobs.map((job) => (
-                  <JobCard 
-                    key={job.id} 
-                    job={job} 
-                    salaryText={formatSalary(job)} 
+                  <JobCard
+                    key={job.id}
+                    job={job}
+                    salaryText={formatSalary(job)}
                     isSaved={savedJobIds.has(job.id)}
                     onToggleSave={(e) => handleToggleSave(e, job.id)}
-                    onClick={() => onJobClick && onJobClick(job.id)} 
+                    onClick={() => onJobClick && onJobClick(job.id)}
                   />
                 ))}
               </div>
@@ -388,7 +388,32 @@ export default function CandidateJobSearch({ onNavigate, onJobClick, isPublic = 
   );
 }
 
-const JobCard: React.FC<{ 
+const formatEmploymentType = (type: string) => {
+  if (!type) return '';
+  switch (type) {
+    case 'FULL_TIME': return 'Toàn thời gian';
+    case 'PART_TIME': return 'Bán thời gian';
+    case 'REMOTE': return 'Làm việc từ xa';
+    case 'HYBRID': return 'Hybrid';
+    case 'CONTRACT': return 'Hợp đồng';
+    default: return type;
+  }
+};
+
+const formatExperienceLevel = (level: string) => {
+  if (!level) return '';
+  switch (level) {
+    case 'FRESHER': return 'Fresher';
+    case 'UNDER_ONE_YEAR': return 'Dưới 1 năm kinh nghiệm';
+    case 'ONE_TO_TWO': return '1 - 2 năm kinh nghiệm';
+    case 'TWO_TO_THREE': return '2 - 3 năm kinh nghiệm';
+    case 'THREE_TO_FIVE': return '3 - 5 năm kinh nghiệm';
+    case 'OVER_FIVE': return 'Trên 5 năm kinh nghiệm';
+    default: return level;
+  }
+};
+
+const JobCard: React.FC<{
   job: JobSummary;
   salaryText: string;
   isSaved: boolean;
@@ -408,7 +433,7 @@ const JobCard: React.FC<{
           </div>
           <div className="flex items-center gap-3">
             <span className="text-[11px] text-slate-400">{job.viewsCount || 0} lượt xem</span>
-            <button 
+            <button
               onClick={onToggleSave}
               title={isSaved ? "Bỏ lưu việc làm" : "Lưu việc làm"}
               className={`p-1.5 rounded-full transition-colors ${isSaved ? 'text-rose-500 bg-rose-50' : 'text-slate-400 hover:text-rose-500 hover:bg-slate-100'}`}
@@ -417,22 +442,22 @@ const JobCard: React.FC<{
             </button>
           </div>
         </div>
-        
+
         <h3 className="mb-1 text-base font-bold text-slate-800 group-hover:text-indigo-600 transition-colors line-clamp-1">
           {job.title}
         </h3>
         <p className="mb-2 text-xs font-medium text-slate-500">{job.companyName}</p>
-        
+
         <div className="mb-2 flex flex-wrap gap-1.5">
           <span className="rounded-md bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600">
-            {job.employmentType}
+            {formatEmploymentType(job.employmentType)}
           </span>
           <span className="rounded-md bg-indigo-50 px-2 py-0.5 text-[11px] font-medium text-indigo-600">
-            {job.experienceLevel}
+            {formatExperienceLevel(job.experienceLevel)}
           </span>
         </div>
       </div>
-      
+
       <div className="mt-2 flex flex-col sm:flex-row sm:items-end justify-between border-t border-slate-100 pt-2.5 gap-2">
         <div className="flex flex-col">
           <span className="text-sm font-bold text-green-600">{salaryText}</span>
