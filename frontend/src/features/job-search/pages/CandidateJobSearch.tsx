@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, MapPin, Briefcase, Filter, ArrowDownUp, Loader2 } from 'lucide-react';
+import { Search, MapPin, Briefcase, Filter, ArrowDownUp, Loader2, Heart } from 'lucide-react';
 
 import CandidateSidebar from '../../../layouts/CandidateSidebar';
 import CandidateHeader from '../../../layouts/CandidateHeader';
@@ -7,6 +7,7 @@ import { jobSearchApi, JobSummary } from '../api/jobSearch.api';
 
 export default function CandidateJobSearch({ onNavigate, onJobClick, isPublic = false, onLoginClick }: { onNavigate?: (item: string) => void, onJobClick?: (jobId: string) => void, isPublic?: boolean, onLoginClick?: () => void }) {
   const [jobs, setJobs] = useState<JobSummary[]>([]);
+  const [savedJobIds, setSavedJobIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState<boolean>(true);
   const [page, setPage] = useState<number>(0);
   const [totalPages, setTotalPages] = useState<number>(0);
@@ -18,6 +19,16 @@ export default function CandidateJobSearch({ onNavigate, onJobClick, isPublic = 
   const [experienceLevel, setExperienceLevel] = useState<string>('');
   const [employmentType, setEmploymentType] = useState<string>('');
   const [sortBy, setSortBy] = useState<string>('createdAt');
+
+  const fetchSavedJobs = async () => {
+    if (isPublic) return;
+    try {
+      const saved = await jobSearchApi.getSavedJobs();
+      setSavedJobIds(new Set(saved.map(j => j.id)));
+    } catch {
+      // Ignore if unauthenticated
+    }
+  };
 
   const fetchJobs = async () => {
     try {
@@ -44,7 +55,33 @@ export default function CandidateJobSearch({ onNavigate, onJobClick, isPublic = 
 
   useEffect(() => {
     fetchJobs();
+    fetchSavedJobs();
   }, [page, sortBy]);
+
+  const handleToggleSave = async (e: React.MouseEvent, jobId: string) => {
+    e.stopPropagation();
+    if (isPublic) {
+      if (onLoginClick) onLoginClick();
+      return;
+    }
+
+    const isCurrentlySaved = savedJobIds.has(jobId);
+    try {
+      if (isCurrentlySaved) {
+        await jobSearchApi.unsaveJob(jobId);
+        setSavedJobIds(prev => {
+          const next = new Set(prev);
+          next.delete(jobId);
+          return next;
+        });
+      } else {
+        await jobSearchApi.saveJob(jobId);
+        setSavedJobIds(prev => new Set(prev).add(jobId));
+      }
+    } catch (err) {
+      console.error('Lỗi khi thao tác lưu việc làm:', err);
+    }
+  };
 
   const handleSearchSubmit = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -238,7 +275,14 @@ export default function CandidateJobSearch({ onNavigate, onJobClick, isPublic = 
             ) : (
               <div className="flex flex-col gap-4">
                 {jobs.map((job) => (
-                  <JobCard key={job.id} job={job} salaryText={formatSalary(job)} onClick={() => onJobClick && onJobClick(job.id)} />
+                  <JobCard 
+                    key={job.id} 
+                    job={job} 
+                    salaryText={formatSalary(job)} 
+                    isSaved={savedJobIds.has(job.id)}
+                    onToggleSave={(e) => handleToggleSave(e, job.id)}
+                    onClick={() => onJobClick && onJobClick(job.id)} 
+                  />
                 ))}
               </div>
             )}
@@ -249,7 +293,7 @@ export default function CandidateJobSearch({ onNavigate, onJobClick, isPublic = 
                 <button
                   disabled={page === 0}
                   onClick={() => setPage(prev => Math.max(0, prev - 1))}
-                  className="px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-semibold text-slate-600 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-100"
+                  className="px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-semibold text-slate-600 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-100 cursor-pointer"
                 >
                   Trang trước
                 </button>
@@ -259,7 +303,7 @@ export default function CandidateJobSearch({ onNavigate, onJobClick, isPublic = 
                 <button
                   disabled={page >= totalPages - 1}
                   onClick={() => setPage(prev => prev + 1)}
-                  className="px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-semibold text-slate-600 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-100"
+                  className="px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-semibold text-slate-600 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-100 cursor-pointer"
                 >
                   Trang sau
                 </button>
@@ -272,7 +316,13 @@ export default function CandidateJobSearch({ onNavigate, onJobClick, isPublic = 
   );
 }
 
-const JobCard: React.FC<{ job: JobSummary, salaryText: string, onClick: () => void }> = ({ job, salaryText, onClick }) => {
+const JobCard: React.FC<{ 
+  job: JobSummary;
+  salaryText: string;
+  isSaved: boolean;
+  onToggleSave: (e: React.MouseEvent) => void;
+  onClick: () => void;
+}> = ({ job, salaryText, isSaved, onToggleSave, onClick }) => {
   return (
     <div onClick={onClick} className="group relative flex flex-col justify-between rounded-xl border border-slate-200 bg-white p-4 transition-all hover:border-indigo-200 hover:shadow-md cursor-pointer">
       <div>
@@ -284,8 +334,15 @@ const JobCard: React.FC<{ job: JobSummary, salaryText: string, onClick: () => vo
               job.companyName.charAt(0)
             )}
           </div>
-          <div className="flex flex-col items-end gap-1">
+          <div className="flex items-center gap-3">
             <span className="text-[11px] text-slate-400">{job.viewsCount || 0} lượt xem</span>
+            <button 
+              onClick={onToggleSave}
+              title={isSaved ? "Bỏ lưu việc làm" : "Lưu việc làm"}
+              className={`p-1.5 rounded-full transition-colors ${isSaved ? 'text-rose-500 bg-rose-50' : 'text-slate-400 hover:text-rose-500 hover:bg-slate-100'}`}
+            >
+              <Heart size={18} fill={isSaved ? "currentColor" : "none"} />
+            </button>
           </div>
         </div>
         

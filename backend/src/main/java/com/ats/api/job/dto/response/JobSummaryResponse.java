@@ -35,11 +35,18 @@ public class JobSummaryResponse {
     @JsonProperty("isNegotiableSalary")
     private boolean isNegotiableSalary;
 
+    @JsonProperty("isSaved")
+    private boolean isSaved;
+
     private String currency;
     private int viewsCount;
     private Instant createdAt;
 
     public static JobSummaryResponse fromEntity(Job job) {
+        return fromEntity(job, false);
+    }
+
+    public static JobSummaryResponse fromEntity(Job job, boolean isSaved) {
         if (job == null) return null;
 
         return JobSummaryResponse.builder()
@@ -54,6 +61,7 @@ public class JobSummaryResponse {
                 .salaryMin(job.getSalaryMin())
                 .salaryMax(job.getSalaryMax())
                 .isNegotiableSalary(job.isNegotiableSalary())
+                .isSaved(isSaved)
                 .currency(job.getCurrency())
                 .viewsCount(job.getViewsCount())
                 .createdAt(job.getCreatedAt())
