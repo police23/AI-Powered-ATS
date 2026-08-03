@@ -11,9 +11,8 @@ interface NavItemProps {
 
 function NavItem({ icon: Icon, label, active, badge, onClick }: NavItemProps) {
   return (
-    <a href="#" onClick={(e) => { e.preventDefault(); if (onClick) onClick(); }} className={`flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-      active ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-    }`}>
+    <a href="#" onClick={(e) => { e.preventDefault(); if (onClick) onClick(); }} className={`flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${active ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+      }`}>
       <div className="flex items-center gap-3">
         <Icon size={18} className={active ? 'text-indigo-600' : 'text-slate-400'} />
         {label}
@@ -48,29 +47,35 @@ export default function CandidateSidebar({ activeItem = 'discover', onNavigate }
 
       <div className="p-3 flex-1">
         <nav className="space-y-1.5">
-          <NavItem 
-            icon={LayoutDashboard} 
-            label="Dashboard" 
-            active={activeItem === 'discover'} 
-            onClick={() => onNavigate && onNavigate('discover')} 
+          <NavItem
+            icon={LayoutDashboard}
+            label="Dashboard"
+            active={activeItem === 'discover'}
+            onClick={() => onNavigate && onNavigate('discover')}
           />
-          <NavItem 
-            icon={Search} 
-            label="Tìm việc làm" 
-            active={activeItem === 'search'} 
-            onClick={() => onNavigate && onNavigate('search')} 
+          <NavItem
+            icon={Search}
+            label="Tìm việc làm"
+            active={activeItem === 'search'}
+            onClick={() => onNavigate && onNavigate('search')}
           />
-          <NavItem 
-            icon={Briefcase} 
-            label="Lịch sử ứng tuyển" 
-            active={activeItem === 'applied'} 
-            onClick={() => onNavigate && onNavigate('applied')} 
+          <NavItem
+            icon={Briefcase}
+            label="Lịch sử ứng tuyển"
+            active={activeItem === 'applied'}
+            onClick={() => onNavigate && onNavigate('applied')}
           />
-          <NavItem 
-            icon={Bookmark} 
-            label="Việc đã lưu" 
-            active={activeItem === 'saved'} 
-            onClick={() => onNavigate && onNavigate('saved')} 
+          <NavItem
+            icon={Bookmark}
+            label="Việc đã lưu"
+            active={activeItem === 'saved'}
+            onClick={() => onNavigate && onNavigate('saved')}
+          />
+          <NavItem
+            icon={FileText}
+            label="Quản lý CV"
+            active={activeItem === 'profile'}
+            onClick={() => onNavigate && onNavigate('candidate-profile')}
           />
         </nav>
       </div>
