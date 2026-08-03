@@ -46,6 +46,20 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(ex.getHttpStatus()).body(response);
     }
 
+    @ExceptionHandler(com.ats.api.job.exception.JobException.class)
+    public ResponseEntity<ErrorResponse> handleJobException(com.ats.api.job.exception.JobException ex, HttpServletRequest request) {
+        log.warn("JobException occurred: code={} status={} message={}", ex.getCode(), ex.getHttpStatus(), ex.getMessage());
+        ErrorResponse response = new ErrorResponse(
+                ex.getCode(),
+                ex.getMessage(),
+                ex.getHttpStatus().value(),
+                Instant.now(),
+                request.getRequestURI(),
+                List.of()
+        );
+        return ResponseEntity.status(ex.getHttpStatus()).body(response);
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> handleValidationException(MethodArgumentNotValidException ex, HttpServletRequest request) {
         List<String> errors = ex.getBindingResult().getFieldErrors().stream()
