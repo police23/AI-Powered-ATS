@@ -55,13 +55,14 @@ const BASE_URL = '/api/v1';
 async function request<T>(endpoint: string, options: RequestOptions = {}): Promise<T> {
   const url = endpoint.startsWith('http') ? endpoint : `${BASE_URL}${endpoint.startsWith('/') ? '' : '/'}${endpoint}`;
   
-  const headers: HeadersInit = {
-    'Content-Type': 'application/json',
-    ...(options.headers || {}),
+  const isFormData = typeof FormData !== 'undefined' && options.body instanceof FormData;
+  const headers: Record<string, string> = {
+    ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
+    ...(options.headers as Record<string, string> || {}),
   };
 
   if (!options.skipAuth && currentAccessToken) {
-    (headers as Record<string, string>)['Authorization'] = `Bearer ${currentAccessToken}`;
+    headers['Authorization'] = `Bearer ${currentAccessToken}`;
   }
 
   const config: RequestInit = {
