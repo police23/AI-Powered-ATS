@@ -51,6 +51,7 @@ public class JobSearchServiceImpl implements JobSearchService {
 
     @Override
     @Transactional
+    @org.springframework.cache.annotation.Cacheable(value = "jobDetails", key = "#jobId")
     public JobDetailResponse getJobDetail(UUID jobId) {
         Job job = jobRepository.findById(jobId)
                 .orElseThrow(() -> new JobNotFoundException("Không tìm thấy bài tuyển dụng yêu cầu"));

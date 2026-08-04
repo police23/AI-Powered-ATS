@@ -4,7 +4,7 @@ import { mockJobs } from '../../../utils/data';
 import { Job } from '../../../types';
 import Footer from '../../../layouts/Footer';
 
-export default function JobBoard({ onLoginClick, onJobClick, onSearchClick }: { onLoginClick: () => void, onJobClick: () => void, onSearchClick?: () => void }) {
+export default function JobBoard({ onLoginClick, onJobClick, onSearchClick }: { onLoginClick: () => void, onJobClick?: (jobId?: string) => void, onSearchClick?: () => void }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [location, setLocation] = useState('');
   const [filteredJobs, setFilteredJobs] = useState(mockJobs);

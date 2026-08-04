@@ -87,6 +87,14 @@ const pathToViewMap: Record<string, ViewType> = Object.entries(viewToPathMap).re
 
 export default function AppRoutes() {
   const { user } = useAuth();
+  const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
+
+  const handleJobClick = (jobId?: string, isPublic = false) => {
+    if (jobId) {
+      setSelectedJobId(jobId);
+    }
+    navigateToView(isPublic ? 'job-detail' : 'candidate-job-detail');
+  };
 
   const getViewFromPath = (): ViewType | null => {
     const pathname = window.location.pathname;
@@ -124,21 +132,15 @@ export default function AppRoutes() {
 
   useEffect(() => {
     const handlePopState = () => {
-      const view = getViewFromPath();
-      if (view) {
-        setCurrentView(view);
+      const pathname = window.location.pathname;
+      const targetView = pathToViewMap[pathname];
+      if (targetView) {
+        setCurrentView(targetView);
       }
     };
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
-
-  useEffect(() => {
-    const targetPath = viewToPathMap[currentView] || '/';
-    if (window.location.pathname !== targetPath) {
-      window.history.replaceState({}, '', targetPath);
-    }
-  }, [currentView]);
 
   const handleAdminNavigation = (item: string) => {
     switch (item) {
@@ -195,10 +197,10 @@ export default function AppRoutes() {
       case 'jobs':
         navigateToView('employer-jobs');
         break;
-      case 'candidates':
+      case 'applicant-tracking':
         navigateToView('applicant-tracking');
         break;
-      case 'calendar':
+      case 'interview-calendar':
         navigateToView('interview-calendar');
         break;
       case 'company-profile':
@@ -223,11 +225,11 @@ export default function AppRoutes() {
   };
 
   return currentView === 'job-board' ? (
-    <JobBoard onLoginClick={() => navigateToView('login')} onJobClick={() => navigateToView('job-detail')} onSearchClick={() => navigateToView('public-job-search')} />
+    <JobBoard onLoginClick={() => navigateToView('login')} onJobClick={(jobId) => handleJobClick(jobId, true)} onSearchClick={() => navigateToView('public-job-search')} />
   ) : currentView === 'public-job-search' ? (
-    <PublicJobSearch onLoginClick={() => navigateToView('login')} onJobClick={() => navigateToView('job-detail')} onHomeClick={() => navigateToView('job-board')} />
+    <PublicJobSearch onLoginClick={() => navigateToView('login')} onJobClick={(jobId) => handleJobClick(jobId, true)} onHomeClick={() => navigateToView('job-board')} />
   ) : currentView === 'job-detail' ? (
-    <JobDetail onBack={() => navigateToView('job-board')} onApply={() => navigateToView('login')} onViewCompany={() => navigateToView('public-company-profile')} isPublic={true} onLoginClick={() => navigateToView('login')} onHomeClick={() => navigateToView('job-board')} />
+    <JobDetail jobId={selectedJobId || undefined} onBack={() => navigateToView('job-board')} onApply={() => navigateToView('login')} onViewCompany={() => navigateToView('public-company-profile')} isPublic={true} onLoginClick={() => navigateToView('login')} onHomeClick={() => navigateToView('job-board')} />
   ) : currentView === 'login' ? (
     <Login 
       onBack={() => navigateToView('job-board')} 
@@ -243,17 +245,17 @@ export default function AppRoutes() {
   ) : currentView === 'profile-setup' ? (
     <ProfileSetup onComplete={() => navigateToView('candidate-dashboard')} />
   ) : currentView === 'candidate-dashboard' ? (
-    <CandidateDashboard onNavigate={handleCandidateNavigation} onJobClick={() => navigateToView('candidate-job-detail')} />
+    <CandidateDashboard onNavigate={handleCandidateNavigation} onJobClick={(jobId) => handleJobClick(jobId, false)} />
   ) : currentView === 'candidate-job-search' ? (
-    <CandidateJobSearch onNavigate={handleCandidateNavigation} onJobClick={() => navigateToView('candidate-job-detail')} />
+    <CandidateJobSearch onNavigate={handleCandidateNavigation} onJobClick={(jobId) => handleJobClick(jobId, false)} />
   ) : currentView === 'candidate-resumes' ? (
     <CandidateResumes onNavigate={handleCandidateNavigation} />
   ) : currentView === 'candidate-job-detail' ? (
-    <CandidateJobDetail onBack={() => navigateToView('candidate-job-search')} onApply={() => navigateToView('candidate-dashboard')} onNavigate={handleCandidateNavigation} onViewCompany={() => navigateToView('candidate-company-profile')} />
+    <CandidateJobDetail jobId={selectedJobId || undefined} onBack={() => navigateToView('candidate-job-search')} onApply={() => navigateToView('candidate-dashboard')} onNavigate={handleCandidateNavigation} onViewCompany={() => navigateToView('candidate-company-profile')} />
   ) : currentView === 'applied-jobs' ? (
     <AppliedJobs onNavigate={handleCandidateNavigation} />
   ) : currentView === 'saved-jobs' ? (
-    <SavedJobs onNavigate={handleCandidateNavigation} onJobClick={() => navigateToView('candidate-job-detail')} />
+    <SavedJobs onNavigate={handleCandidateNavigation} onJobClick={(jobId) => handleJobClick(jobId, false)} />
   ) : currentView === 'employer-dashboard' ? (
     <EmployerDashboard onCreateJobClick={() => navigateToView('post-job')} onNavigate={handleEmployerNavigation} />
   ) : currentView === 'employer-jobs' ? (

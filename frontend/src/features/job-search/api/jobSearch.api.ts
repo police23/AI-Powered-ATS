@@ -28,6 +28,7 @@ export interface JobSummary {
   currency: string;
   viewsCount: number;
   createdAt: string;
+  isSaved?: boolean;
 }
 
 export interface JobDetail extends JobSummary {
