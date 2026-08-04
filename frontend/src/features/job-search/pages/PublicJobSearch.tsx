@@ -1,7 +1,7 @@
 import React from 'react';
 import CandidateJobSearch from './CandidateJobSearch';
 
-export default function PublicJobSearch({ onLoginClick, onJobClick, onHomeClick }: { onLoginClick: () => void, onJobClick: () => void, onHomeClick: () => void }) {
+export default function PublicJobSearch({ onLoginClick, onJobClick, onHomeClick }: { onLoginClick: () => void, onJobClick?: (jobId?: string) => void, onHomeClick: () => void }) {
   return (
     <CandidateJobSearch 
       isPublic={true}

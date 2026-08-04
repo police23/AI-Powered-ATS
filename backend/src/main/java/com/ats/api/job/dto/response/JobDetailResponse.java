@@ -11,6 +11,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
@@ -20,7 +21,9 @@ import java.util.UUID;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class JobDetailResponse {
+public class JobDetailResponse implements Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     private UUID id;
     private String companyName;

@@ -6,7 +6,7 @@ import CandidateSidebar from '../../../layouts/CandidateSidebar';
 import Footer from '../../../layouts/Footer';
 import CandidateHeader from '../../../layouts/CandidateHeader';
 
-export default function CandidateDashboard({ onNavigate, onJobClick }: { onNavigate?: (item: string) => void, onJobClick?: () => void }) {
+export default function CandidateDashboard({ onNavigate, onJobClick }: { onNavigate?: (item: string) => void, onJobClick?: (jobId?: string) => void }) {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -125,8 +125,8 @@ export default function CandidateDashboard({ onNavigate, onJobClick }: { onNavig
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {mockJobs.slice(0, 3).map((job, index) => (
-                <div key={job.id} onClick={() => onJobClick && onJobClick()} className="bg-white rounded-xl border border-slate-200 p-5 hover:border-indigo-300 hover:shadow-md transition-all cursor-pointer group flex flex-col justify-between">
+              {mockJobs.slice(0, 3).map((job) => (
+                <div key={job.id} onClick={() => onJobClick && onJobClick(String(job.id))} className="bg-white rounded-xl border border-slate-200 p-5 hover:border-indigo-300 hover:shadow-md transition-all cursor-pointer group flex flex-col justify-between">
                   <div>
                     <div className="flex items-center justify-between gap-3 mb-3">
                       <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-slate-100 bg-slate-50 font-bold text-slate-400 text-xl">
