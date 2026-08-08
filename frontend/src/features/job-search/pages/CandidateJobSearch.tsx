@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, MapPin, Briefcase, Filter, ArrowDownUp, Loader2, Heart } from 'lucide-react';
+import { Search, MapPin, Briefcase, Filter, ArrowDownUp, Loader2, Heart, AlertCircle } from 'lucide-react';
 
 import CandidateSidebar from '../../../layouts/CandidateSidebar';
 import CandidateHeader from '../../../layouts/CandidateHeader';
@@ -76,6 +76,15 @@ export default function CandidateJobSearch({ onNavigate, onJobClick, isPublic = 
     fetchSavedJobs();
   }, [page, sortBy]);
 
+  const [toastMessage, setToastMessage] = useState<{ text: string; type: 'success' | 'info' } | null>(null);
+
+  const showToast = (text: string, type: 'success' | 'info' = 'success') => {
+    setToastMessage({ text, type });
+    setTimeout(() => {
+      setToastMessage(null);
+    }, 3000);
+  };
+
   const handleToggleSave = async (e: React.MouseEvent, jobId: string) => {
     e.stopPropagation();
     if (isPublic) {
@@ -92,12 +101,15 @@ export default function CandidateJobSearch({ onNavigate, onJobClick, isPublic = 
           next.delete(jobId);
           return next;
         });
+        showToast('Đã bỏ lưu việc làm khỏi danh sách yêu thích', 'info');
       } else {
         await jobSearchApi.saveJob(jobId);
         setSavedJobIds(prev => new Set(prev).add(jobId));
+        showToast('Đã lưu việc làm vào danh sách việc làm đã lưu!', 'success');
       }
     } catch (err) {
       console.error('Lỗi khi thao tác lưu việc làm:', err);
+      showToast('Không thể thực hiện thao tác lưu việc làm', 'info');
     }
   };
 
@@ -132,7 +144,35 @@ export default function CandidateJobSearch({ onNavigate, onJobClick, isPublic = 
   };
 
   return (
-    <div className={`min-h-screen bg-slate-50 font-sans text-slate-800 flex ${isPublic ? 'flex-col' : 'flex-col md:flex-row'}`}>
+    <div className={`min-h-screen bg-slate-50 font-sans text-slate-800 flex relative ${isPublic ? 'flex-col' : 'flex-col md:flex-row'}`}>
+      {/* Toast Notification */}
+      {toastMessage && (
+        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[9999] transition-all duration-300">
+          <div className={`flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-2xl border text-sm font-bold ${
+            toastMessage.type === 'success' 
+              ? 'bg-slate-900 text-white border-slate-700' 
+              : 'bg-slate-800 text-slate-200 border-slate-600'
+          }`}>
+            {toastMessage.type === 'success' ? (
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-rose-500/20 text-rose-500 shrink-0">
+                <Heart size={18} className="fill-rose-500" />
+              </div>
+            ) : (
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-amber-500/20 text-amber-400 shrink-0">
+                <AlertCircle size={18} />
+              </div>
+            )}
+            <span className="text-sm font-semibold">{toastMessage.text}</span>
+            <button 
+              onClick={() => setToastMessage(null)}
+              className="ml-3 text-slate-400 hover:text-white text-base font-bold cursor-pointer"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
+
       {!isPublic && <CandidateSidebar activeItem="search" onNavigate={onNavigate} />}
 
       {/* Main Content */}
