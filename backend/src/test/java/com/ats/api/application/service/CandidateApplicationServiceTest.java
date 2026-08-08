@@ -12,7 +12,6 @@ import com.ats.api.auth.entity.enums.UserRole;
 import com.ats.api.auth.repository.UserRepository;
 import com.ats.api.job.entity.Job;
 import com.ats.api.job.entity.enums.JobStatus;
-import com.ats.api.job.exception.JobNotFoundException;
 import com.ats.api.job.repository.JobRepository;
 import com.ats.api.profile.entity.CandidateResume;
 import com.ats.api.profile.exception.ProfileException;
