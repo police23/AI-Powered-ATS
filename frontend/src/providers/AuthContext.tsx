@@ -3,6 +3,7 @@ import {
   loginApi,
   registerApi,
   logoutApi,
+  refreshTokenApi,
   LoginCredentials,
   RegisterPayload,
   UserSummary,
@@ -90,6 +91,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setIsLoading(false);
     }
   };
+
+  // Silent auth check on mount to ensure session continuity across page reloads
+  useEffect(() => {
+    const initSession = async () => {
+      const savedUser = localStorage.getItem(USER_STORAGE_KEY);
+      if (savedUser) {
+        try {
+          const res = await refreshTokenApi();
+          if (res && res.accessToken) {
+            setStoredAccessToken(res.accessToken);
+            setAccessTokenState(res.accessToken);
+          }
+        } catch {
+          // If silent refresh fails (e.g. backend server restarted), clear stale profile
+          console.warn('Session refresh on startup failed, token may be invalid or server restarted');
+        }
+      }
+    };
+
+    initSession();
+  }, []);
 
   // Listen for global auth expiration events from httpClient
   useEffect(() => {

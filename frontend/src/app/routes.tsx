@@ -87,13 +87,18 @@ const pathToViewMap: Record<string, ViewType> = Object.entries(viewToPathMap).re
 
 export default function AppRoutes() {
   const { user } = useAuth();
-  const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
+  const [selectedJobId, setSelectedJobId] = useState<string | null>(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('id') || localStorage.getItem('selected_job_id');
+  });
 
   const handleJobClick = (jobId?: string, isPublic = false) => {
     if (jobId) {
       setSelectedJobId(jobId);
+      localStorage.setItem('selected_job_id', jobId);
     }
-    navigateToView(isPublic ? 'job-detail' : 'candidate-job-detail');
+    const targetView = isPublic ? 'job-detail' : 'candidate-job-detail';
+    navigateToView(targetView, jobId);
   };
 
   const getViewFromPath = (): ViewType | null => {
@@ -105,10 +110,24 @@ export default function AppRoutes() {
   };
 
   const [currentView, setCurrentView] = useState<ViewType>(() => {
+    const pathname = window.location.pathname;
     const pathView = getViewFromPath();
+    const savedUser = localStorage.getItem('ats_user_profile');
+
+    // If reloading on '/' root path and user is logged in, restore user's role dashboard
+    if (pathname === '/' && savedUser) {
+      try {
+        const parsed = JSON.parse(savedUser);
+        if (parsed.role === 'ADMIN') return 'admin-dashboard';
+        if (parsed.role === 'HR' || parsed.role === 'HR_MANAGER') return 'employer-dashboard';
+        if (parsed.role === 'CANDIDATE') return 'candidate-dashboard';
+      } catch {
+        // Fallback
+      }
+    }
+
     if (pathView) return pathView;
 
-    const savedUser = localStorage.getItem('ats_user_profile');
     if (savedUser) {
       try {
         const parsed = JSON.parse(savedUser);
@@ -122,10 +141,14 @@ export default function AppRoutes() {
     return 'job-board';
   });
 
-  const navigateToView = (newView: ViewType) => {
+  const navigateToView = (newView: ViewType, jobIdParam?: string) => {
     setCurrentView(newView);
-    const targetPath = viewToPathMap[newView] || '/';
-    if (window.location.pathname !== targetPath) {
+    let targetPath = viewToPathMap[newView] || '/';
+    const idToUse = jobIdParam || selectedJobId || localStorage.getItem('selected_job_id');
+    if ((newView === 'job-detail' || newView === 'candidate-job-detail') && idToUse) {
+      targetPath = `${targetPath}?id=${idToUse}`;
+    }
+    if (window.location.pathname + window.location.search !== targetPath) {
       window.history.pushState({}, '', targetPath);
     }
   };
@@ -136,6 +159,11 @@ export default function AppRoutes() {
       const targetView = pathToViewMap[pathname];
       if (targetView) {
         setCurrentView(targetView);
+      }
+      const params = new URLSearchParams(window.location.search);
+      const idParam = params.get('id');
+      if (idParam) {
+        setSelectedJobId(idParam);
       }
     };
     window.addEventListener('popstate', handlePopState);
