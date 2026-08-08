@@ -254,6 +254,51 @@ class AuthServiceTest {
     }
 
     @Test
+    @DisplayName("givenReusedRefreshTokenWithinGracePeriodButReplacementTokenIsRevoked_whenRefreshToken_thenThrowTokenReusedException")
+    void givenReusedRefreshTokenWithinGracePeriodButReplacementTokenIsRevoked_whenRefreshToken_thenThrowTokenReusedException() {
+        String rawToken = "old-used-token";
+        String tokenHash = "hash-old-used-token";
+        UUID familyId = UUID.randomUUID();
+        UUID replacedByTokenId = UUID.randomUUID();
+
+        User user = User.builder()
+                .id(UUID.randomUUID())
+                .email("user@example.com")
+                .role(UserRole.CANDIDATE)
+                .status(AccountStatus.ACTIVE)
+                .build();
+
+        // Replacement token is REVOKED (e.g. user changed password or manual logout)
+        RefreshToken replacementToken = RefreshToken.builder()
+                .id(replacedByTokenId)
+                .user(user)
+                .tokenHash("hash-replacement-token")
+                .familyId(familyId)
+                .status(RefreshTokenStatus.REVOKED)
+                .expiresAt(Instant.now().plusSeconds(3600))
+                .createdAt(Instant.now().minusSeconds(2))
+                .build();
+
+        RefreshToken usedTokenEntity = RefreshToken.builder()
+                .id(UUID.randomUUID())
+                .user(user)
+                .tokenHash(tokenHash)
+                .familyId(familyId)
+                .status(RefreshTokenStatus.USED)
+                .replacedByTokenId(replacedByTokenId)
+                .expiresAt(Instant.now().plusSeconds(3600))
+                .createdAt(Instant.now().minusSeconds(300))
+                .build();
+
+        when(tokenHashService.hash(rawToken)).thenReturn(tokenHash);
+        when(refreshTokenRepository.findByTokenHash(tokenHash)).thenReturn(Optional.of(usedTokenEntity));
+        when(refreshTokenRepository.findById(replacedByTokenId)).thenReturn(Optional.of(replacementToken));
+
+        assertThrows(TokenReusedException.class, () -> authService.refreshToken(rawToken, servletResponse));
+        verify(refreshTokenRepository).updateStatusByFamilyId(eq(familyId), eq(RefreshTokenStatus.REVOKED));
+    }
+
+    @Test
     @DisplayName("givenValidChangePasswordRequest_whenChangePassword_thenUpdatePasswordAndRevokeTokens")
     void givenValidChangePasswordRequest_whenChangePassword_thenUpdatePasswordAndRevokeTokens() {
         UUID userId = UUID.randomUUID();

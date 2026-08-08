@@ -196,16 +196,21 @@ public class AuthServiceImpl implements AuthService {
 
         // Grace period check for USED tokens
         if (refreshTokenEntity.getStatus() == RefreshTokenStatus.USED) {
-            Instant rotationTime = null;
+            RefreshToken replacementToken = null;
             if (refreshTokenEntity.getReplacedByTokenId() != null) {
-                rotationTime = refreshTokenRepository.findById(refreshTokenEntity.getReplacedByTokenId())
-                        .map(RefreshToken::getCreatedAt)
-                        .orElse(null);
-            }
-            if (rotationTime == null) {
-                rotationTime = refreshTokenEntity.getCreatedAt();
+                replacementToken = refreshTokenRepository.findById(refreshTokenEntity.getReplacedByTokenId()).orElse(null);
             }
 
+            // Security Check: If replacement token is missing, REVOKED, or EXPIRED, deny grace period access!
+            if (replacementToken == null || replacementToken.getStatus() == RefreshTokenStatus.REVOKED || replacementToken.getStatus() == RefreshTokenStatus.EXPIRED) {
+                log.warn("Grace period rejected: Replacement token is missing or revoked/expired (status={}) for familyId={}",
+                        replacementToken != null ? replacementToken.getStatus() : "NULL", refreshTokenEntity.getFamilyId());
+                refreshTokenRepository.updateStatusByFamilyId(refreshTokenEntity.getFamilyId(), RefreshTokenStatus.REVOKED);
+                clearRefreshTokenCookie(response);
+                throw new TokenReusedException();
+            }
+
+            Instant rotationTime = replacementToken.getCreatedAt();
             if (now.isBefore(rotationTime.plusSeconds(jwtProperties.gracePeriodSeconds()))) {
                 log.info("Concurrent refresh detected within grace period for familyId={}", refreshTokenEntity.getFamilyId());
                 String newAccessToken = jwtTokenProvider.generateAccessToken(user);
