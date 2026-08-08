@@ -36,4 +36,15 @@ public class PageResponse<T> {
                 .isLast(page.isLast())
                 .build();
     }
+
+    public static <S, T> PageResponse<T> fromPage(Page<S> page, java.util.function.Function<S, T> mapper) {
+        return PageResponse.<T>builder()
+                .content(page.getContent().stream().map(mapper).toList())
+                .pageNumber(page.getNumber())
+                .pageSize(page.getSize())
+                .totalElements(page.getTotalElements())
+                .totalPages(page.getTotalPages())
+                .isLast(page.isLast())
+                .build();
+    }
 }
