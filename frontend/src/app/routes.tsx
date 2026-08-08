@@ -146,7 +146,7 @@ export default function AppRoutes() {
     let targetPath = viewToPathMap[newView] || '/';
     const idToUse = jobIdParam || selectedJobId || localStorage.getItem('selected_job_id');
     if ((newView === 'job-detail' || newView === 'candidate-job-detail') && idToUse) {
-      targetPath = `${targetPath}?id=${idToUse}`;
+      targetPath = `${targetPath}?id=${encodeURIComponent(idToUse)}`;
     }
     if (window.location.pathname + window.location.search !== targetPath) {
       window.history.pushState({}, '', targetPath);
