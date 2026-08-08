@@ -94,24 +94,42 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Silent auth check on mount to ensure session continuity across page reloads
   useEffect(() => {
+    let cancelled = false;
+
     const initSession = async () => {
       const savedUser = localStorage.getItem(USER_STORAGE_KEY);
-      if (savedUser) {
-        try {
-          const res = await refreshTokenApi();
-          if (res && res.accessToken) {
-            setStoredAccessToken(res.accessToken);
-            setAccessTokenState(res.accessToken);
-          }
-        } catch {
+      if (!savedUser) return;
+
+      let parsedUser: UserSummary;
+      try {
+        parsedUser = JSON.parse(savedUser) as UserSummary;
+      } catch {
+        if (!cancelled) handleSetSession(null, null);
+        return;
+      }
+
+      try {
+        const res = await refreshTokenApi();
+        if (!cancelled && res?.accessToken) {
+          handleSetSession(res.accessToken, parsedUser);
+        } else if (!cancelled) {
+          handleSetSession(null, null);
+        }
+      } catch {
+        if (!cancelled) {
           // If silent refresh fails (e.g. backend server restarted), clear stale profile
+          handleSetSession(null, null);
           console.warn('Session refresh on startup failed, token may be invalid or server restarted');
         }
       }
     };
 
     initSession();
-  }, []);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [handleSetSession]);
 
   // Listen for global auth expiration events from httpClient
   useEffect(() => {
