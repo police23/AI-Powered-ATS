@@ -242,11 +242,12 @@ export default function JobDetail({
                 ) : (
                   <button 
                     onClick={() => {
-                      if (isPublic && onLoginClick) {
-                        onLoginClick();
-                      } else {
-                        setIsApplyModalOpen(true);
+                      if (isPublic) {
+                        if (onLoginClick) onLoginClick();
+                        else showToast('Vui lòng đăng nhập để ứng tuyển', 'info');
+                        return;
                       }
+                      setIsApplyModalOpen(true);
                     }}
                     className="rounded-lg bg-indigo-600 px-6 py-2 text-xs font-semibold text-white shadow-sm hover:bg-indigo-700 transition-colors cursor-pointer"
                   >
