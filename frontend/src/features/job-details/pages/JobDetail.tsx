@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { ArrowLeft, MapPin, Building, Clock, DollarSign, Bookmark, CheckCircle2, Users, Box, ExternalLink, Briefcase, Image as ImageIcon, Loader2, Heart, Check, AlertCircle } from 'lucide-react';
 import Footer from '../../../layouts/Footer';
 import { jobSearchApi, JobDetail as JobDetailType } from '../../job-search/api/jobSearch.api';
+import { candidateApplicationApi } from '../../candidate-applications/api/candidateApplication.api';
+import ApplyModal from '../../../components/modal/ApplyModal';
 
 export default function JobDetail({ 
   jobId,
@@ -25,6 +27,8 @@ export default function JobDetail({
   const [job, setJob] = useState<JobDetailType | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [isSaved, setIsSaved] = useState<boolean>(false);
+  const [isApplied, setIsApplied] = useState<boolean>(false);
+  const [isApplyModalOpen, setIsApplyModalOpen] = useState<boolean>(false);
   const [toastMessage, setToastMessage] = useState<{ text: string; type: 'success' | 'info' } | null>(null);
 
   useEffect(() => {
@@ -39,7 +43,7 @@ export default function JobDetail({
         const data = await jobSearchApi.getJobDetail(jobId);
         setJob(data);
 
-        // Check if current user saved this job
+        // Check if current user saved or applied for this job
         if (!isPublic) {
           try {
             const savedList = await jobSearchApi.getSavedJobs();
@@ -47,6 +51,13 @@ export default function JobDetail({
             setIsSaved(exists);
           } catch {
             setIsSaved(data.isSaved || false);
+          }
+
+          try {
+            const appCheck = await candidateApplicationApi.checkStatus(jobId);
+            setIsApplied(appCheck.isApplied);
+          } catch {
+            setIsApplied(false);
           }
         }
       } catch (err) {
@@ -223,12 +234,25 @@ export default function JobDetail({
                   <Heart size={18} fill={isSaved ? "currentColor" : "none"} className={isSaved ? "text-rose-500" : ""} />
                   <span>{isSaved ? "Đã lưu" : "Lưu tin"}</span>
                 </button>
-                <button 
-                  onClick={onApply}
-                  className="rounded-lg bg-indigo-600 px-6 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700 transition-colors cursor-pointer"
-                >
-                  Ứng tuyển ngay
-                </button>
+                {isApplied ? (
+                  <div className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-bold cursor-not-allowed">
+                    <CheckCircle2 size={16} />
+                    <span>Đã ứng tuyển</span>
+                  </div>
+                ) : (
+                  <button 
+                    onClick={() => {
+                      if (isPublic && onLoginClick) {
+                        onLoginClick();
+                      } else {
+                        setIsApplyModalOpen(true);
+                      }
+                    }}
+                    className="rounded-lg bg-indigo-600 px-6 py-2 text-xs font-semibold text-white shadow-sm hover:bg-indigo-700 transition-colors cursor-pointer"
+                  >
+                    Ứng tuyển ngay
+                  </button>
+                )}
               </div>
             </div>
           </header>
@@ -287,12 +311,25 @@ export default function JobDetail({
                     </span>
                   </div>
 
-                  <button 
-                    onClick={onApply}
-                    className="px-4 py-2 rounded-lg bg-indigo-600 text-white font-semibold text-xs hover:bg-indigo-700 transition-colors shadow-sm cursor-pointer"
-                  >
-                    Ứng tuyển ngay
-                  </button>
+                  {isApplied ? (
+                    <div className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-bold cursor-not-allowed">
+                      <CheckCircle2 size={16} />
+                      <span>Đã ứng tuyển</span>
+                    </div>
+                  ) : (
+                    <button 
+                      onClick={() => {
+                        if (isPublic && onLoginClick) {
+                          onLoginClick();
+                        } else {
+                          setIsApplyModalOpen(true);
+                        }
+                      }}
+                      className="px-4 py-2 rounded-lg bg-indigo-600 text-white font-semibold text-xs hover:bg-indigo-700 transition-colors shadow-sm cursor-pointer"
+                    >
+                      Ứng tuyển ngay
+                    </button>
+                  )}
                 </div>
               </div>
 
@@ -416,6 +453,22 @@ export default function JobDetail({
         </main>
       </div>
       <Footer />
+
+      {/* Apply Modal */}
+      {job && (
+        <ApplyModal
+          jobId={job.id}
+          jobTitle={job.title}
+          companyName={job.companyName}
+          companyLogo={job.companyLogo}
+          isOpen={isApplyModalOpen}
+          onClose={() => setIsApplyModalOpen(false)}
+          onSuccess={() => {
+            setIsApplied(true);
+            showToast('Đã nộp hồ sơ ứng tuyển thành công!', 'success');
+          }}
+        />
+      )}
     </div>
   );
 }
