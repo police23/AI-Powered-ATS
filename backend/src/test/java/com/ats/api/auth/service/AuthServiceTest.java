@@ -207,6 +207,53 @@ class AuthServiceTest {
     }
 
     @Test
+    @DisplayName("givenReusedRefreshTokenWithinGracePeriod_whenRefreshToken_thenReturnNewAccessToken")
+    void givenReusedRefreshTokenWithinGracePeriod_whenRefreshToken_thenReturnNewAccessToken() {
+        String rawToken = "old-used-token";
+        String tokenHash = "hash-old-used-token";
+        UUID familyId = UUID.randomUUID();
+        UUID replacedByTokenId = UUID.randomUUID();
+
+        User user = User.builder()
+                .id(UUID.randomUUID())
+                .email("user@example.com")
+                .role(UserRole.CANDIDATE)
+                .status(AccountStatus.ACTIVE)
+                .build();
+
+        RefreshToken replacementToken = RefreshToken.builder()
+                .id(replacedByTokenId)
+                .user(user)
+                .tokenHash("hash-replacement-token")
+                .familyId(familyId)
+                .status(RefreshTokenStatus.ACTIVE)
+                .expiresAt(Instant.now().plusSeconds(3600))
+                .createdAt(Instant.now().minusSeconds(2)) // Rotated 2s ago (< grace period of 10s)
+                .build();
+
+        RefreshToken usedTokenEntity = RefreshToken.builder()
+                .id(UUID.randomUUID())
+                .user(user)
+                .tokenHash(tokenHash)
+                .familyId(familyId)
+                .status(RefreshTokenStatus.USED)
+                .replacedByTokenId(replacedByTokenId)
+                .expiresAt(Instant.now().plusSeconds(3600))
+                .createdAt(Instant.now().minusSeconds(300)) // Initial token was created 5 minutes ago
+                .build();
+
+        when(tokenHashService.hash(rawToken)).thenReturn(tokenHash);
+        when(refreshTokenRepository.findByTokenHash(tokenHash)).thenReturn(Optional.of(usedTokenEntity));
+        when(refreshTokenRepository.findById(replacedByTokenId)).thenReturn(Optional.of(replacementToken));
+        when(jwtTokenProvider.generateAccessToken(user)).thenReturn("new-grace-access-token");
+
+        com.ats.api.auth.dto.response.TokenRefreshResponse response = authService.refreshToken(rawToken, servletResponse);
+
+        assertNotNull(response);
+        assertEquals("new-grace-access-token", response.accessToken());
+    }
+
+    @Test
     @DisplayName("givenValidChangePasswordRequest_whenChangePassword_thenUpdatePasswordAndRevokeTokens")
     void givenValidChangePasswordRequest_whenChangePassword_thenUpdatePasswordAndRevokeTokens() {
         UUID userId = UUID.randomUUID();

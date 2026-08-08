@@ -92,12 +92,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // Silent auth check on mount to ensure session continuity across page reloads
+  // Silent auth check on mount only when accessToken is absent but a saved profile exists
   useEffect(() => {
     let cancelled = false;
 
     const initSession = async () => {
       const savedUser = localStorage.getItem(USER_STORAGE_KEY);
+      const storedToken = getStoredAccessToken();
+
+      // If user already has an active access token in storage, session is intact
+      if (storedToken && savedUser) {
+        return;
+      }
+
       if (!savedUser) return;
 
       let parsedUser: UserSummary;
@@ -112,14 +119,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const res = await refreshTokenApi();
         if (!cancelled && res?.accessToken) {
           handleSetSession(res.accessToken, parsedUser);
-        } else if (!cancelled) {
-          handleSetSession(null, null);
         }
-      } catch {
+      } catch (err: any) {
         if (!cancelled) {
-          // If silent refresh fails (e.g. backend server restarted), clear stale profile
-          handleSetSession(null, null);
-          console.warn('Session refresh on startup failed, token may be invalid or server restarted');
+          // If refresh token is truly expired or invalid (HTTP 401), clear stale profile
+          if (err?.status === 401 || err?.code === 'UNAUTHORIZED' || err?.code === 'TOKEN_EXPIRED') {
+            handleSetSession(null, null);
+          }
+          console.warn('Session refresh on startup failed, token may be invalid or server restarted:', err?.message || err);
         }
       }
     };

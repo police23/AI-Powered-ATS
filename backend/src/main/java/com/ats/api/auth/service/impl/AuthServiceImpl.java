@@ -196,8 +196,17 @@ public class AuthServiceImpl implements AuthService {
 
         // Grace period check for USED tokens
         if (refreshTokenEntity.getStatus() == RefreshTokenStatus.USED) {
-            Instant createdAt = refreshTokenEntity.getCreatedAt();
-            if (now.isBefore(createdAt.plusSeconds(jwtProperties.gracePeriodSeconds()))) {
+            Instant rotationTime = null;
+            if (refreshTokenEntity.getReplacedByTokenId() != null) {
+                rotationTime = refreshTokenRepository.findById(refreshTokenEntity.getReplacedByTokenId())
+                        .map(RefreshToken::getCreatedAt)
+                        .orElse(null);
+            }
+            if (rotationTime == null) {
+                rotationTime = refreshTokenEntity.getCreatedAt();
+            }
+
+            if (now.isBefore(rotationTime.plusSeconds(jwtProperties.gracePeriodSeconds()))) {
                 log.info("Concurrent refresh detected within grace period for familyId={}", refreshTokenEntity.getFamilyId());
                 String newAccessToken = jwtTokenProvider.generateAccessToken(user);
                 return new TokenRefreshResponse(newAccessToken, "Bearer", jwtProperties.accessTokenExpirationSeconds());
