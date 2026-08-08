@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, FileText, Upload, CheckCircle2, Loader2, AlertCircle } from 'lucide-react';
+import { X, FileText, Upload, Loader2, AlertCircle } from 'lucide-react';
 import { candidateResumeApi, CandidateResumeResponse } from '../../features/candidate-profile/api/candidateResume.api';
 import { candidateApplicationApi } from '../../features/candidate-applications/api/candidateApplication.api';
 
