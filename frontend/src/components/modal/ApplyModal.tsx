@@ -148,7 +148,10 @@ export default function ApplyModal({
               {resumes.length > 0 && (
                 <button
                   type="button"
-                  onClick={() => setIsUploadingNew(!isUploadingNew)}
+                  onClick={() => {
+                    setIsUploadingNew(!isUploadingNew);
+                    setUploadFile(null);
+                  }}
                   className="text-xs font-semibold text-indigo-600 hover:underline cursor-pointer"
                 >
                   {isUploadingNew ? "Chọn từ danh sách CV" : "+ Tải CV mới lên"}
