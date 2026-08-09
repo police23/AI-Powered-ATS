@@ -7,6 +7,7 @@ import {
 import EmployerSidebar from '../../../layouts/EmployerSidebar';
 import EmployerHeader from '../../../layouts/EmployerHeader';
 import Footer from '../../../layouts/Footer';
+import { employerJobApi } from '../api/job.api';
 
 interface PostJobProps {
   onBack: () => void;
@@ -42,6 +43,7 @@ const BENEFIT_OPTIONS = [
 export default function PostJob({ onBack, onComplete, onNavigate }: PostJobProps) {
   const [step, setStep] = useState(1);
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
 
   // Form states
@@ -141,8 +143,59 @@ export default function PostJob({ onBack, onComplete, onNavigate }: PostJobProps
     }, 1000);
   };
 
-  const handlePublish = () => {
-    setShowSuccessModal(true);
+  const handlePublish = async (statusOverride = 'PUBLISHED') => {
+    try {
+      setIsSubmitting(true);
+
+      const parsedMin = salaryType === 'negotiable' ? undefined : Number(minSalary.replace(/\./g, '').replace(/,/g, ''));
+      const parsedMax = salaryType === 'negotiable' ? undefined : Number(maxSalary.replace(/\./g, '').replace(/,/g, ''));
+
+      let mappedCity = 'HCM';
+      if (location.includes('Hà Nội')) mappedCity = 'HN';
+      else if (location.includes('Đà Nẵng')) mappedCity = 'DN';
+      else if (location.includes('Cần Thơ')) mappedCity = 'CT';
+      else if (location.includes('Hải Phòng')) mappedCity = 'HP';
+
+      let mappedEmploymentType = 'FULL_TIME';
+      if (jobType === 'part-time') mappedEmploymentType = 'PART_TIME';
+      else if (jobType === 'remote') mappedEmploymentType = 'REMOTE';
+      else if (jobType === 'hybrid') mappedEmploymentType = 'HYBRID';
+      else if (jobType === 'contract') mappedEmploymentType = 'CONTRACT';
+
+      let mappedExp = 'THREE_TO_FIVE';
+      if (level === 'Fresher') mappedExp = 'FRESHER';
+      else if (level === 'Junior') mappedExp = 'ONE_TO_TWO';
+      else if (level === 'Mid-Level') mappedExp = 'TWO_TO_THREE';
+      else if (level === 'Senior') mappedExp = 'THREE_TO_FIVE';
+      else if (level === 'Lead') mappedExp = 'OVER_FIVE';
+
+      const payload = {
+        title: jobTitle || 'Bài tuyển dụng mới',
+        companyName: 'TechCorp Vietnam',
+        companyLogo: 'https://images.unsplash.com/photo-1549923746-c502d488b3ea?w=120&auto=format&fit=crop&q=80',
+        city: mappedCity,
+        addressDetail: location,
+        employmentType: mappedEmploymentType,
+        experienceLevel: mappedExp,
+        salaryMin: parsedMin,
+        salaryMax: parsedMax,
+        isNegotiableSalary: salaryType === 'negotiable',
+        currency: currency || 'VND',
+        description: description || 'Chi tiết bài tuyển dụng',
+        requirements: requirements,
+        benefits: selectedBenefits.join(', '),
+        status: statusOverride,
+        expiredAt: expiryDate ? new Date(expiryDate).toISOString() : new Date(Date.now() + 30*24*60*60*1000).toISOString()
+      };
+
+      await employerJobApi.createJob(payload);
+      setShowSuccessModal(true);
+    } catch (err) {
+      console.error('Lỗi khi đăng bài tuyển dụng:', err);
+      alert('Không thể tạo bài tuyển dụng. Vui lòng kiểm tra lại thông tin!');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -879,17 +932,19 @@ export default function PostJob({ onBack, onComplete, onNavigate }: PostJobProps
                 <div className="flex items-center gap-3 w-full sm:w-auto">
                   <button 
                     type="button" 
-                    onClick={onComplete}
-                    className="flex-1 sm:flex-none px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
+                    disabled={isSubmitting}
+                    onClick={() => handlePublish('DRAFT')}
+                    className="flex-1 sm:flex-none px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
                   >
-                    <Save size={16} /> Lưu bản nháp
+                    {isSubmitting ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />} Lưu bản nháp
                   </button>
                   <button 
                     type="button" 
-                    onClick={handlePublish}
-                    className="flex-1 sm:flex-none px-8 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg text-sm transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2"
+                    disabled={isSubmitting}
+                    onClick={() => handlePublish('PUBLISHED')}
+                    className="flex-1 sm:flex-none px-8 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg text-sm transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
                   >
-                    <Zap size={18} /> Đăng tuyển ngay
+                    {isSubmitting ? <Loader2 size={18} className="animate-spin" /> : <Zap size={18} />} Đăng tuyển ngay
                   </button>
                 </div>
               </div>

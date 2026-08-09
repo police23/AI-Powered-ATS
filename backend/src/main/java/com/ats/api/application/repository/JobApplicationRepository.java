@@ -1,6 +1,7 @@
 package com.ats.api.application.repository;
 
 import com.ats.api.application.entity.JobApplication;
+import com.ats.api.application.entity.enums.ApplicationStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -17,4 +18,8 @@ public interface JobApplicationRepository extends JpaRepository<JobApplication, 
     Optional<JobApplication> findByCandidateIdAndJobId(UUID candidateId, UUID jobId);
 
     Page<JobApplication> findByCandidateId(UUID candidateId, Pageable pageable);
+
+    long countByJobId(UUID jobId);
+
+    long countByJobIdAndStatus(UUID jobId, ApplicationStatus status);
 }
