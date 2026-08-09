@@ -50,4 +50,13 @@ public class CandidateApplicationController {
         PageResponse<ApplicationResponse> response = applicationService.getMyApplications(principal.getUserId(), page, size);
         return ResponseEntity.ok(response);
     }
+
+    @DeleteMapping("/applications/{applicationId}")
+    @PreAuthorize("hasRole('CANDIDATE')")
+    public ResponseEntity<Void> withdrawApplication(
+            @AuthenticationPrincipal SecurityUserPrincipal principal,
+            @PathVariable("applicationId") UUID applicationId) {
+        applicationService.withdrawApplication(principal.getUserId(), applicationId);
+        return ResponseEntity.noContent().build();
+    }
 }

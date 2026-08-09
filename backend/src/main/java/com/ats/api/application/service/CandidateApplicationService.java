@@ -14,4 +14,6 @@ public interface CandidateApplicationService {
     ApplicationCheckResponse checkApplicationStatus(UUID candidateId, UUID jobId);
 
     PageResponse<ApplicationResponse> getMyApplications(UUID candidateId, int page, int size);
+
+    void withdrawApplication(UUID candidateId, UUID applicationId);
 }

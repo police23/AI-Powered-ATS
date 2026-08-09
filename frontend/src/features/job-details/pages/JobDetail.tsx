@@ -30,6 +30,8 @@ export default function JobDetail({
   const [loading, setLoading] = useState<boolean>(true);
   const [isSaved, setIsSaved] = useState<boolean>(false);
   const [isApplied, setIsApplied] = useState<boolean>(false);
+  const [applicationId, setApplicationId] = useState<string | null>(null);
+  const [isWithdrawing, setIsWithdrawing] = useState<boolean>(false);
   const [isApplyModalOpen, setIsApplyModalOpen] = useState<boolean>(false);
   const [toastMessage, setToastMessage] = useState<{ text: string; type: 'success' | 'info' } | null>(null);
 
@@ -58,8 +60,10 @@ export default function JobDetail({
           try {
             const appCheck = await candidateApplicationApi.checkStatus(jobId);
             setIsApplied(appCheck.isApplied);
+            if (appCheck.applicationId) setApplicationId(appCheck.applicationId);
           } catch {
             setIsApplied(false);
+            setApplicationId(null);
           }
         }
       } catch (err) {
@@ -99,6 +103,24 @@ export default function JobDetail({
     } catch (err) {
       console.error('Lỗi khi lưu bài tuyển dụng:', err);
       showToast('Không thể thực hiện thao tác lưu việc làm', 'info');
+    }
+  };
+
+  const handleWithdraw = async () => {
+    if (!applicationId) return;
+    if (window.confirm("Bạn có chắc chắn muốn rút đơn ứng tuyển này? Hành động này không thể hoàn tác.")) {
+      try {
+        setIsWithdrawing(true);
+        await candidateApplicationApi.withdrawApplication(applicationId);
+        showToast("Đã rút đơn ứng tuyển thành công", "success");
+        setIsApplied(false);
+        setApplicationId(null);
+      } catch (err: any) {
+        console.error('Lỗi khi rút đơn:', err);
+        showToast(err?.message || "Lỗi khi rút đơn", "info");
+      } finally {
+        setIsWithdrawing(false);
+      }
     }
   };
 
@@ -237,9 +259,21 @@ export default function JobDetail({
                   <span>{isSaved ? "Đã lưu" : "Lưu tin"}</span>
                 </button>
                 {isApplied ? (
-                  <div className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-bold cursor-not-allowed">
-                    <CheckCircle2 size={16} />
-                    <span>Đã ứng tuyển</span>
+                  <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-bold cursor-not-allowed">
+                      <CheckCircle2 size={16} />
+                      <span>Đã ứng tuyển</span>
+                    </div>
+                    {applicationId && (
+                      <button 
+                        onClick={handleWithdraw}
+                        disabled={isWithdrawing}
+                        className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white border border-rose-200 text-rose-600 font-semibold text-xs hover:bg-rose-50 transition-colors disabled:opacity-50 cursor-pointer"
+                      >
+                        {isWithdrawing && <Loader2 size={14} className="animate-spin" />}
+                        Rút đơn
+                      </button>
+                    )}
                   </div>
                 ) : (
                   <button 
@@ -313,26 +347,6 @@ export default function JobDetail({
                       {formatExperienceLevel(job.experienceLevel)}
                     </span>
                   </div>
-
-                  {isApplied ? (
-                    <div className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-bold cursor-not-allowed">
-                      <CheckCircle2 size={16} />
-                      <span>Đã ứng tuyển</span>
-                    </div>
-                  ) : (
-                    <button 
-                      onClick={() => {
-                        if (isPublic && onLoginClick) {
-                          onLoginClick();
-                        } else {
-                          setIsApplyModalOpen(true);
-                        }
-                      }}
-                      className="px-4 py-2 rounded-lg bg-indigo-600 text-white font-semibold text-xs hover:bg-indigo-700 transition-colors shadow-sm cursor-pointer"
-                    >
-                      Ứng tuyển ngay
-                    </button>
-                  )}
                 </div>
               </div>
 
