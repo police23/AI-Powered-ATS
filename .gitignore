@@ -12,3 +12,4 @@ coverage/
 .agents
 docs
 backend/uploads/resumes
+implementation_plan.md
