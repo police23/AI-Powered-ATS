@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
-import { Search, MapPin, Building, DollarSign, Clock, CheckCircle2, XCircle, Calendar, AlertCircle, X, FileText, UserCheck, Mail, Phone, ExternalLink, Download, AlertTriangle } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Search, MapPin, Building, DollarSign, Clock, CheckCircle2, XCircle, Calendar, AlertCircle, X, FileText, UserCheck, Mail, Phone, ExternalLink, Download, AlertTriangle, Loader2 } from 'lucide-react';
 import CandidateSidebar from '../../../layouts/CandidateSidebar';
 import CandidateHeader from '../../../layouts/CandidateHeader';
 import Footer from '../../../layouts/Footer';
+import { candidateApplicationApi } from '../api/candidateApplication.api';
 
 const mockAppliedJobs = [
   {
@@ -150,12 +151,75 @@ const getStatusConfig = (status: string) => {
 
 export default function AppliedJobs({ onNavigate }: { onNavigate: (item: string) => void }) {
   const [filter, setFilter] = useState('all');
-  const [selectedJob, setSelectedJob] = useState<typeof mockAppliedJobs[0] | null>(null);
+  const [applications, setApplications] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [isWithdrawing, setIsWithdrawing] = useState(false);
+  const [selectedJob, setSelectedJob] = useState<any | null>(null);
   const [showWithdrawConfirm, setShowWithdrawConfirm] = useState(false);
+  const [toastMessage, setToastMessage] = useState<{ text: string; type: 'success' | 'info' } | null>(null);
+
+  const fetchApplications = async () => {
+    try {
+      setLoading(true);
+      const res = await candidateApplicationApi.getMyApplications(0, 100);
+      const mapped = res.content.map(app => ({
+        id: app.id,
+        title: app.jobTitle,
+        company: app.companyName,
+        location: app.city,
+        salary: 'Thỏa thuận', // API does not return salary directly here
+        appliedDate: new Date(app.appliedAt).toLocaleDateString('vi-VN'),
+        status: app.status.toLowerCase(), // Maps to ui tags
+        logo: app.companyLogo ? <img src={app.companyLogo} className="w-full h-full object-cover rounded-lg" alt={app.companyName} /> : app.companyName.charAt(0),
+        matchScore: 0,
+        cvName: app.resumeName,
+        coverLetter: '',
+        hrContact: null,
+        timeline: [
+          { step: 'Nộp hồ sơ thành công', date: new Date(app.appliedAt).toLocaleDateString('vi-VN'), done: true, active: app.status === 'APPLIED' },
+          { step: 'HR đang xem xét', date: 'Đang xử lý', done: app.status !== 'APPLIED', active: app.status === 'VIEWED' },
+          { step: 'Kết quả', date: '', done: ['INTERVIEW', 'REJECTED', 'OFFERED'].includes(app.status) }
+        ]
+      }));
+      setApplications(mapped);
+    } catch (err) {
+      console.error(err);
+      showToast('Không thể tải danh sách ứng tuyển', 'info');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchApplications();
+  }, []);
+
+  const handleWithdraw = async (applicationId: string) => {
+    try {
+      setIsWithdrawing(true);
+      await candidateApplicationApi.withdrawApplication(applicationId);
+      showToast('Đã rút đơn ứng tuyển thành công', 'success');
+      setSelectedJob(null);
+      setShowWithdrawConfirm(false);
+      fetchApplications();
+    } catch (err: any) {
+      console.error(err);
+      showToast(err?.message || 'Lỗi khi rút đơn', 'info');
+    } finally {
+      setIsWithdrawing(false);
+    }
+  };
+
+  const showToast = (text: string, type: 'success' | 'info' = 'success') => {
+    setToastMessage({ text, type });
+    setTimeout(() => {
+      setToastMessage(null);
+    }, 3000);
+  };
 
   const filteredJobs = filter === 'all' 
-    ? mockAppliedJobs 
-    : mockAppliedJobs.filter(job => job.status === filter);
+    ? applications 
+    : applications.filter(job => job.status === filter);
 
   return (
     <div className="min-h-screen bg-slate-50 font-sans text-slate-800 flex flex-col md:flex-row h-screen overflow-hidden">
@@ -163,6 +227,28 @@ export default function AppliedJobs({ onNavigate }: { onNavigate: (item: string)
       
       <div className={`flex-1 flex flex-col min-w-0 ${selectedJob ? 'overflow-hidden' : 'overflow-y-auto'}`}>
         <CandidateHeader title="Lịch sử ứng tuyển" onNavigate={onNavigate} />
+
+        {/* Toast Notification */}
+        {toastMessage && (
+          <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[9999] transition-all duration-300">
+            <div className={`flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-2xl border text-sm font-bold ${
+              toastMessage.type === 'success' 
+                ? 'bg-slate-900 text-white border-slate-700' 
+                : 'bg-slate-800 text-slate-200 border-slate-600'
+            }`}>
+              {toastMessage.type === 'success' ? (
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-500 shrink-0">
+                  <CheckCircle2 size={18} />
+                </div>
+              ) : (
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-amber-500/20 text-amber-400 shrink-0">
+                  <AlertCircle size={18} />
+                </div>
+              )}
+              <span className="text-sm font-semibold">{toastMessage.text}</span>
+            </div>
+          </div>
+        )}
 
         <main className="flex-1 p-6 md:p-8 max-w-5xl mx-auto w-full">
           
@@ -232,7 +318,11 @@ export default function AppliedJobs({ onNavigate }: { onNavigate: (item: string)
 
           {/* Job List */}
           <div className="space-y-4">
-            {filteredJobs.length > 0 ? (
+            {loading ? (
+              <div className="flex justify-center items-center py-20 text-slate-400">
+                <Loader2 size={32} className="animate-spin" />
+              </div>
+            ) : filteredJobs.length > 0 ? (
               filteredJobs.map((job) => {
                 const statusConfig = getStatusConfig(job.status);
                 const StatusIcon = statusConfig.icon;
@@ -262,12 +352,22 @@ export default function AppliedJobs({ onNavigate }: { onNavigate: (item: string)
                           <StatusIcon size={16} />
                           {statusConfig.label}
                         </div>
-                        <button 
-                          onClick={() => setSelectedJob(job)}
-                          className="text-indigo-600 hover:text-indigo-700 text-sm font-semibold hover:underline cursor-pointer flex items-center gap-1"
-                        >
-                          Xem chi tiết
-                        </button>
+                        <div className="flex items-center gap-4">
+                          {['applied', 'viewed'].includes(job.status) && (
+                            <button
+                              onClick={() => { setSelectedJob(job); setShowWithdrawConfirm(true); }}
+                              className="text-rose-600 hover:text-rose-700 text-sm font-semibold hover:underline cursor-pointer"
+                            >
+                              Rút đơn
+                            </button>
+                          )}
+                          <button 
+                            onClick={() => setSelectedJob(job)}
+                            className="text-indigo-600 hover:text-indigo-700 text-sm font-semibold hover:underline cursor-pointer flex items-center gap-1"
+                          >
+                            Xem chi tiết
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -462,7 +562,7 @@ export default function AppliedJobs({ onNavigate }: { onNavigate: (item: string)
               {/* Modal Footer */}
               <div className="p-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between">
                 <div>
-                  {selectedJob.status === 'applied' && (
+                  {['applied', 'viewed'].includes(selectedJob.status) && (
                     !showWithdrawConfirm ? (
                       <button 
                         onClick={() => setShowWithdrawConfirm(true)}
@@ -476,14 +576,17 @@ export default function AppliedJobs({ onNavigate }: { onNavigate: (item: string)
                           <AlertTriangle size={14} /> Xác nhận rút đơn?
                         </span>
                         <button 
-                          onClick={() => { setSelectedJob(null); setShowWithdrawConfirm(false); }}
-                          className="text-xs bg-rose-600 text-white px-2.5 py-1 rounded font-bold hover:bg-rose-700 cursor-pointer"
+                          onClick={() => handleWithdraw(selectedJob.id)}
+                          disabled={isWithdrawing}
+                          className="flex items-center gap-1.5 text-xs bg-rose-600 text-white px-2.5 py-1 rounded font-bold hover:bg-rose-700 cursor-pointer disabled:opacity-50"
                         >
+                          {isWithdrawing && <Loader2 size={12} className="animate-spin" />}
                           Đồng ý
                         </button>
                         <button 
                           onClick={() => setShowWithdrawConfirm(false)}
-                          className="text-xs text-slate-500 hover:text-slate-700 px-2 py-1 cursor-pointer"
+                          disabled={isWithdrawing}
+                          className="text-xs text-slate-500 hover:text-slate-700 px-2 py-1 cursor-pointer disabled:opacity-50"
                         >
                           Hủy
                         </button>

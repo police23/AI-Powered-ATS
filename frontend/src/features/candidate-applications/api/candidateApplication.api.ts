@@ -48,4 +48,8 @@ export const candidateApplicationApi = {
   getMyApplications: async (page = 0, size = 10): Promise<PageResponse<ApplicationResponse>> => {
     return await httpClient.get<PageResponse<ApplicationResponse>>(`/candidates/me/applications?page=${page}&size=${size}`);
   },
+
+  withdrawApplication: async (applicationId: string): Promise<void> => {
+    return await httpClient.delete(`/applications/${applicationId}`);
+  },
 };

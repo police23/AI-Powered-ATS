@@ -105,4 +105,22 @@ public class CandidateApplicationServiceImpl implements CandidateApplicationServ
 
         return PageResponse.fromPage(pageResult, ApplicationResponse::fromEntity);
     }
+
+    @Override
+    @Transactional
+    public void withdrawApplication(UUID candidateId, UUID applicationId) {
+        JobApplication application = applicationRepository.findById(applicationId)
+                .orElseThrow(() -> new ProfileException("Không tìm thấy đơn ứng tuyển", "APPLICATION_NOT_FOUND", HttpStatus.NOT_FOUND));
+
+        if (!application.getCandidate().getId().equals(candidateId)) {
+            throw new ProfileException("Bạn không có quyền thực hiện thao tác này", "FORBIDDEN", HttpStatus.FORBIDDEN);
+        }
+
+        if (application.getStatus() != ApplicationStatus.APPLIED && application.getStatus() != ApplicationStatus.VIEWED) {
+            throw new ProfileException("Không thể rút đơn khi HR đã xử lý hoặc đang phỏng vấn", "INVALID_STATUS", HttpStatus.BAD_REQUEST);
+        }
+
+        applicationRepository.delete(application);
+        log.info("Ứng viên userId={} đã rút đơn ứng tuyển applicationId={}", candidateId, applicationId);
+    }
 }
