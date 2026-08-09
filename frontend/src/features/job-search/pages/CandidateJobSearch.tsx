@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Search, MapPin, Briefcase, Filter, ArrowDownUp, Loader2, Heart, AlertCircle } from 'lucide-react';
+import { Search, MapPin, Briefcase, Filter, ArrowDownUp, Loader2, Heart, AlertCircle, ChevronRight } from 'lucide-react';
+import { Pagination } from '../../../components';
 
 import CandidateSidebar from '../../../layouts/CandidateSidebar';
 import CandidateHeader from '../../../layouts/CandidateHeader';
@@ -400,27 +401,11 @@ export default function CandidateJobSearch({ onNavigate, onJobClick, isPublic = 
             )}
 
             {/* Pagination Controls */}
-            {totalPages > 1 && (
-              <div className="flex items-center justify-center gap-2 mt-8">
-                <button
-                  disabled={page === 0}
-                  onClick={() => setPage(prev => Math.max(0, prev - 1))}
-                  className="px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-semibold text-slate-600 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-100 cursor-pointer"
-                >
-                  Trang trước
-                </button>
-                <span className="text-xs text-slate-500 font-medium px-2">
-                  Trang {page + 1} / {totalPages}
-                </span>
-                <button
-                  disabled={page >= totalPages - 1}
-                  onClick={() => setPage(prev => prev + 1)}
-                  className="px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-semibold text-slate-600 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-100 cursor-pointer"
-                >
-                  Trang sau
-                </button>
-              </div>
-            )}
+            <Pagination
+              currentPage={page}
+              totalPages={totalPages}
+              onPageChange={setPage}
+            />
           </div>
         </div>
       </main>
