@@ -97,7 +97,11 @@ export default function ApplyModal({
       onClose();
     } catch (err: any) {
       console.error('Lỗi khi nộp hồ sơ:', err);
-      setErrorMessage(err?.message || 'Có lỗi xảy ra khi nộp hồ sơ ứng tuyển');
+      const msg = err?.message || 'Có lỗi xảy ra khi nộp hồ sơ ứng tuyển';
+      setErrorMessage(msg);
+      if (msg.includes('trước đó') || err?.code === 'ALREADY_APPLIED') {
+        onSuccess();
+      }
     } finally {
       setSubmitting(false);
     }

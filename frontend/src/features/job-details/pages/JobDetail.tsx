@@ -4,6 +4,7 @@ import Footer from '../../../layouts/Footer';
 import { jobSearchApi, JobDetail as JobDetailType } from '../../job-search/api/jobSearch.api';
 import { candidateApplicationApi } from '../../candidate-applications/api/candidateApplication.api';
 import ApplyModal from '../../../components/modal/ApplyModal';
+import { useAuth } from '../../../hooks/useAuth';
 
 export default function JobDetail({ 
   jobId,
@@ -24,6 +25,7 @@ export default function JobDetail({
   onLoginClick?: () => void; 
   onHomeClick?: () => void 
 }) {
+  const { user, isAuthenticated } = useAuth();
   const [job, setJob] = useState<JobDetailType | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [isSaved, setIsSaved] = useState<boolean>(false);
@@ -43,8 +45,8 @@ export default function JobDetail({
         const data = await jobSearchApi.getJobDetail(jobId);
         setJob(data);
 
-        // Check if current user saved or applied for this job
-        if (!isPublic) {
+        // Check if current user saved or applied for this job if user is a logged-in candidate
+        if (isAuthenticated && user?.role === 'CANDIDATE') {
           try {
             const savedList = await jobSearchApi.getSavedJobs();
             const exists = savedList.some(s => s.id === jobId);
@@ -68,7 +70,7 @@ export default function JobDetail({
     };
 
     fetchDetail();
-  }, [jobId, isPublic]);
+  }, [jobId, isAuthenticated, user]);
 
   const showToast = (text: string, type: 'success' | 'info' = 'success') => {
     setToastMessage({ text, type });
