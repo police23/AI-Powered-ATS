@@ -4,129 +4,7 @@ import CandidateSidebar from '../../../layouts/CandidateSidebar';
 import CandidateHeader from '../../../layouts/CandidateHeader';
 import Footer from '../../../layouts/Footer';
 import { candidateApplicationApi } from '../api/candidateApplication.api';
-
-const mockAppliedJobs = [
-  {
-    id: 1,
-    title: 'Senior React Native Developer',
-    company: 'TechBase VN',
-    location: 'Quận 1, TP. HCM',
-    salary: '2,500 - 3,500 USD',
-    appliedDate: '20/07/2026',
-    status: 'interview', // applied, viewed, interview, rejected, offered, declined_offer
-    logo: 'T',
-    matchScore: 92,
-    cvName: 'CV_NguyenVanA_ReactNative.pdf',
-    coverLetter: 'Kính gửi HR TechBase VN, tôi có 4 năm kinh nghiệm phát triển ứng dụng di động với React Native và TypeScript. Rất mong có cơ hội trao đổi chi tiết hơn.',
-    hrContact: { name: 'Nguyễn Thu Hà', email: 'hr@techbase.vn', phone: '0901 234 567' },
-    interviewInfo: { time: '14:00 - 24/07/2026', type: 'Online qua Google Meet', link: 'https://meet.google.com/abc-defg-hij', interviewer: 'Trần Văn B (Tech Lead)' },
-    timeline: [
-      { step: 'Nộp hồ sơ thành công', date: '20/07/2026', done: true },
-      { step: 'HR đã tiếp nhận & xem hồ sơ', date: '21/07/2026', done: true },
-      { step: 'Mời phỏng vấn Vòng 1', date: '22/07/2026', done: true, active: true },
-      { step: 'Kết quả tuyển dụng / Offer', date: 'Dự kiến 26/07/2026', done: false }
-    ]
-  },
-  {
-    id: 2,
-    title: 'Frontend Engineer (React/Vue)',
-    company: 'NexusHR Solutions',
-    location: 'Quận 3, TP. HCM',
-    salary: 'Up to $2000',
-    appliedDate: '15/07/2026',
-    status: 'viewed',
-    logo: 'N',
-    matchScore: 88,
-    cvName: 'CV_NguyenVanA_Frontend.pdf',
-    coverLetter: 'Mong muốn cống hiến năng lực thiết kế UI và tối ưu hiệu năng web cho NexusHR.',
-    hrContact: { name: 'Lê Minh Anh', email: 'recruitment@nexushr.vn', phone: '0912 345 678' },
-    timeline: [
-      { step: 'Nộp hồ sơ thành công', date: '15/07/2026', done: true },
-      { step: 'HR đã xem hồ sơ', date: '16/07/2026', done: true, active: true },
-      { step: 'Đánh giá chuyên môn', date: 'Đang xử lý', done: false }
-    ]
-  },
-  {
-    id: 3,
-    title: 'Fullstack Developer (Node.js/React)',
-    company: 'Fintech Startup',
-    location: 'Quận Cầu Giấy, Hà Nội',
-    salary: '1,500 - 2,500 USD',
-    appliedDate: '10/07/2026',
-    status: 'rejected',
-    logo: 'F',
-    matchScore: 75,
-    cvName: 'CV_NguyenVanA_Fullstack.pdf',
-    coverLetter: 'Rất hào hứng với lĩnh vực Fintech và mong muốn được thử sức.',
-    hrContact: { name: 'Phạm Bảo Ngọc', email: 'hr@fintech.io', phone: '0988 777 666' },
-    rejectionReason: 'Cảm ơn bạn đã quan tâm. Dù ấn tượng với hồ sơ của bạn, hiện tại chúng tôi đang ưu tiên ứng viên có kinh nghiệm sâu hơn về Microservices.',
-    timeline: [
-      { step: 'Nộp hồ sơ thành công', date: '10/07/2026', done: true },
-      { step: 'HR đã xem hồ sơ', date: '11/07/2026', done: true },
-      { step: 'Thông báo chưa phù hợp', date: '13/07/2026', done: true, rejected: true }
-    ]
-  },
-  {
-    id: 4,
-    title: 'UI/UX Designer',
-    company: 'Creative Studio',
-    location: 'Quận Phú Nhuận, TP. HCM',
-    salary: '1,000 - 1,800 USD',
-    appliedDate: '05/07/2026',
-    status: 'offered',
-    logo: 'C',
-    matchScore: 95,
-    cvName: 'Portfolio_CV_NguyenVanA.pdf',
-    coverLetter: 'Gửi kèm Portfolio gồm 12 dự án thiết kế ứng dụng di động và hệ thống Design System.',
-    hrContact: { name: 'Trần Hoàng Nam', email: 'careers@creativestudio.com', phone: '0903 888 999' },
-    offerInfo: { salary: '1,700 USD/tháng', startDate: '01/08/2026', expireDate: '28/07/2026', note: 'Thử việc 85% lương trong 2 tháng, hưởng đầy đủ phúc lợi BHXH và bảo hiểm bảo việt.' },
-    timeline: [
-      { step: 'Nộp hồ sơ thành công', date: '05/07/2026', done: true },
-      { step: 'HR đã xem hồ sơ', date: '06/07/2026', done: true },
-      { step: 'Phỏng vấn chuyên môn', date: '09/07/2026', done: true },
-      { step: 'Nhận thư mời làm việc (Offer)', date: '15/07/2026', done: true, active: true }
-    ]
-  },
-  {
-    id: 5,
-    title: 'DevOps Engineer',
-    company: 'Cloud Native Corp',
-    location: 'Quận Tân Bình, TP. HCM',
-    salary: '2,000 - 3,000 USD',
-    appliedDate: '01/07/2026',
-    status: 'declined_offer',
-    logo: 'C',
-    matchScore: 85,
-    cvName: 'CV_NguyenVanA_DevOps.pdf',
-    coverLetter: 'Kinh nghiệm triển khai Kubernetes và CI/CD pipeline trên AWS.',
-    hrContact: { name: 'Đỗ Hải Đăng', email: 'hr@cloudnative.vn', phone: '0933 111 222' },
-    timeline: [
-      { step: 'Nộp hồ sơ thành công', date: '01/07/2026', done: true },
-      { step: 'HR đã xem hồ sơ', date: '02/07/2026', done: true },
-      { step: 'Phỏng vấn', date: '05/07/2026', done: true },
-      { step: 'Offer Letter', date: '08/07/2026', done: true },
-      { step: 'Ứng viên từ chối Offer', date: '10/07/2026', done: true, declined: true }
-    ]
-  },
-  {
-    id: 6,
-    title: 'Backend Developer (Java)',
-    company: 'Global Software',
-    location: 'Quận Nam Từ Liêm, Hà Nội',
-    salary: '1,200 - 2,000 USD',
-    appliedDate: '28/06/2026',
-    status: 'applied',
-    logo: 'G',
-    matchScore: 90,
-    cvName: 'CV_NguyenVanA_Java.pdf',
-    coverLetter: 'Kinh nghiệm 3 năm phát triển Spring Boot RESTful API.',
-    hrContact: { name: 'Vũ Thanh Thảo', email: 'hr@globalsoft.com', phone: '0977 444 555' },
-    timeline: [
-      { step: 'Nộp hồ sơ thành công', date: '28/06/2026', done: true, active: true },
-      { step: 'HR chờ xử lý', date: 'Chưa xem', done: false }
-    ]
-  }
-];
+import { Pagination } from '../../../components';
 
 const getStatusConfig = (status: string) => {
   switch (status) {
@@ -157,6 +35,8 @@ export default function AppliedJobs({ onNavigate }: { onNavigate: (item: string)
   const [selectedJob, setSelectedJob] = useState<any | null>(null);
   const [showWithdrawConfirm, setShowWithdrawConfirm] = useState(false);
   const [toastMessage, setToastMessage] = useState<{ text: string; type: 'success' | 'info' } | null>(null);
+  const [currentPage, setCurrentPage] = useState(0);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const fetchApplications = async () => {
     try {
@@ -217,9 +97,20 @@ export default function AppliedJobs({ onNavigate }: { onNavigate: (item: string)
     }, 3000);
   };
 
-  const filteredJobs = filter === 'all' 
-    ? applications 
-    : applications.filter(job => job.status === filter);
+  useEffect(() => {
+    setCurrentPage(0);
+  }, [filter, searchQuery]);
+
+  const filteredJobs = applications.filter(job => {
+    const matchesFilter = filter === 'all' || job.status === filter;
+    const matchesSearch = job.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                          job.company.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesFilter && matchesSearch;
+  });
+
+  const ITEMS_PER_PAGE = 10;
+  const totalPages = Math.ceil(filteredJobs.length / ITEMS_PER_PAGE);
+  const paginatedJobs = filteredJobs.slice(currentPage * ITEMS_PER_PAGE, (currentPage + 1) * ITEMS_PER_PAGE);
 
   return (
     <div className="min-h-screen bg-slate-50 font-sans text-slate-800 flex flex-col md:flex-row h-screen overflow-hidden">
@@ -259,6 +150,8 @@ export default function AppliedJobs({ onNavigate }: { onNavigate: (item: string)
               <input 
                 type="text" 
                 placeholder="Tìm kiếm công việc..." 
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-9 pr-4 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent w-full sm:w-64 bg-slate-50 focus:bg-white transition-colors"
               />
             </div>
@@ -268,27 +161,37 @@ export default function AppliedJobs({ onNavigate }: { onNavigate: (item: string)
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-8">
             <div className="bg-white rounded-xl border border-slate-200 p-3.5 shadow-sm text-center">
               <p className="text-xs text-slate-500 mb-1 font-medium">Tổng CV đã nộp</p>
-              <div className="text-xl font-bold text-indigo-700">15</div>
+              <div className="text-xl font-bold text-indigo-700">{applications.length}</div>
             </div>
             <div className="bg-white rounded-xl border border-slate-200 p-3.5 shadow-sm text-center">
               <p className="text-xs text-slate-500 mb-1 font-medium">Đã ứng tuyển</p>
-              <div className="text-xl font-bold text-slate-700">2</div>
+              <div className="text-xl font-bold text-slate-700">
+                {applications.filter(app => app.status === 'applied').length}
+              </div>
             </div>
             <div className="bg-white rounded-xl border border-slate-200 p-3.5 shadow-sm text-center">
               <p className="text-xs text-slate-500 mb-1 font-medium">HR đã xem</p>
-              <div className="text-xl font-bold text-amber-700">4</div>
+              <div className="text-xl font-bold text-amber-700">
+                {applications.filter(app => app.status === 'viewed').length}
+              </div>
             </div>
             <div className="bg-white rounded-xl border border-slate-200 p-3.5 shadow-sm text-center">
               <p className="text-xs text-slate-500 mb-1 font-medium">Phỏng vấn</p>
-              <div className="text-xl font-bold text-blue-700">3</div>
+              <div className="text-xl font-bold text-blue-700">
+                {applications.filter(app => app.status === 'interview').length}
+              </div>
             </div>
             <div className="bg-white rounded-xl border border-slate-200 p-3.5 shadow-sm text-center">
               <p className="text-xs text-slate-500 mb-1 font-medium">Chưa phù hợp</p>
-              <div className="text-xl font-bold text-rose-700">4</div>
+              <div className="text-xl font-bold text-rose-700">
+                {applications.filter(app => app.status === 'rejected').length}
+              </div>
             </div>
             <div className="bg-white rounded-xl border border-slate-200 p-3.5 shadow-sm text-center">
               <p className="text-xs text-slate-500 mb-1 font-medium">Offer Letter</p>
-              <div className="text-xl font-bold text-emerald-700">1</div>
+              <div className="text-xl font-bold text-emerald-700">
+                {applications.filter(app => app.status === 'offered').length}
+              </div>
             </div>
           </div>
 
@@ -323,7 +226,7 @@ export default function AppliedJobs({ onNavigate }: { onNavigate: (item: string)
                 <Loader2 size={32} className="animate-spin" />
               </div>
             ) : filteredJobs.length > 0 ? (
-              filteredJobs.map((job) => {
+              paginatedJobs.map((job) => {
                 const statusConfig = getStatusConfig(job.status);
                 const StatusIcon = statusConfig.icon;
                 
@@ -383,6 +286,13 @@ export default function AppliedJobs({ onNavigate }: { onNavigate: (item: string)
               </div>
             )}
           </div>
+
+          {/* Pagination */}
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+          />
           
         </main>
 
