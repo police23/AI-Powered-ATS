@@ -12,6 +12,7 @@ import java.util.UUID;
 @Builder
 public class ApplicationCheckResponse {
 
+    @com.fasterxml.jackson.annotation.JsonProperty("isApplied")
     private boolean isApplied;
     private UUID jobId;
     private UUID applicationId;
