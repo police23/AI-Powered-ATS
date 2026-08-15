@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { 
   Briefcase, ArrowLeft, Plus, Trash2, CheckCircle2, ChevronRight, ChevronLeft, X, 
   Sparkles, DollarSign, MapPin, Clock, Building2, Users, Award, ShieldCheck, 
-  Eye, Save, Calendar, Zap, Check, Tag, FileText, Gift, HelpCircle, Layers
+  Eye, Save, Calendar, Zap, Check, Tag, FileText, Gift, HelpCircle, Layers, Loader2
 } from 'lucide-react';
 import EmployerSidebar from '../../../layouts/EmployerSidebar';
 import EmployerHeader from '../../../layouts/EmployerHeader';
@@ -147,8 +147,8 @@ export default function PostJob({ onBack, onComplete, onNavigate }: PostJobProps
     try {
       setIsSubmitting(true);
 
-      const parsedMin = salaryType === 'negotiable' ? undefined : Number(minSalary.replace(/\./g, '').replace(/,/g, ''));
-      const parsedMax = salaryType === 'negotiable' ? undefined : Number(maxSalary.replace(/\./g, '').replace(/,/g, ''));
+      const parsedMin = (salaryType === 'negotiable' || !minSalary) ? undefined : Number(minSalary.toString().replace(/\./g, '').replace(/,/g, ''));
+      const parsedMax = (salaryType === 'negotiable' || !maxSalary) ? undefined : Number(maxSalary.toString().replace(/\./g, '').replace(/,/g, ''));
 
       let mappedCity = 'HCM';
       if (location.includes('Hà Nội')) mappedCity = 'HN';
@@ -169,6 +169,13 @@ export default function PostJob({ onBack, onComplete, onNavigate }: PostJobProps
       else if (level === 'Senior') mappedExp = 'THREE_TO_FIVE';
       else if (level === 'Lead') mappedExp = 'OVER_FIVE';
 
+      let formattedExpiredAt: string | undefined = undefined;
+      if (expiryDate && !isNaN(new Date(expiryDate).getTime())) {
+        formattedExpiredAt = new Date(expiryDate).toISOString();
+      } else {
+        formattedExpiredAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+      }
+
       const payload = {
         title: jobTitle || 'Bài tuyển dụng mới',
         companyName: 'TechCorp Vietnam',
@@ -185,7 +192,7 @@ export default function PostJob({ onBack, onComplete, onNavigate }: PostJobProps
         requirements: requirements,
         benefits: selectedBenefits.join(', '),
         status: statusOverride,
-        expiredAt: expiryDate ? new Date(expiryDate).toISOString() : new Date(Date.now() + 30*24*60*60*1000).toISOString()
+        expiredAt: formattedExpiredAt
       };
 
       await employerJobApi.createJob(payload);
