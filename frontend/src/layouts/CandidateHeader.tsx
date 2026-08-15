@@ -56,7 +56,7 @@ export default function CandidateHeader({ title = "Khám phá & Gợi ý", onNav
   };
 
   return (
-    <header className="flex h-16 items-center justify-between border-b border-slate-200 bg-white px-4 sm:px-6 relative z-20">
+    <header className="flex h-16 items-center justify-between border-b border-slate-200 bg-white px-4 sm:px-6 relative z-30 sticky top-0 shrink-0">
       <div className="flex items-center gap-4">
         {children}
         <h1 className="text-xl font-bold text-slate-800">{title}</h1>
