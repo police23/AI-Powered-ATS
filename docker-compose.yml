@@ -34,6 +34,7 @@ services:
       - SPRING_DEVTOOLS_LIVERELOAD_ENABLED=true
     volumes:
       - ./backend:/app
+      - backend_target:/app/target
       - maven_cache:/root/.m2
     depends_on:
       - postgres
@@ -75,3 +76,4 @@ volumes:
   postgres_data:
   redis_data:
   maven_cache:
+  backend_target:
